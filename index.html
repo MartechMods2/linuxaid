@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="description" content="LinuxAid helps beginners learn Linux safely with AI guidance, command tutorials, terminal practice, and community support.">
+  <meta name="keywords" content="Linux learning, Linux AI assistant, terminal simulator, command explorer, beginner Linux tutorials, Linux community">
+  <meta name="author" content="LinuxAid Team">
+  <title>LinuxAid | Learn Linux Without Fear</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+</head>
+<body data-page="landing">
+  <header class="navbar">
+    <div class="brand">
+      <div style="width:44px;height:44px;border-radius:18px;background:rgba(35,255,139,0.15);display:grid;place-items:center;color:var(--green);font-size:1.15rem;">L</div>
+      <div>
+        <h1>LinuxAid</h1>
+        <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">AI-powered Linux learning</div>
+      </div>
+    </div>
+    <nav class="nav-links">
+      <a href="index.html#home">Home</a>
+      <a href="linux.html">Linux</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="#features">Features</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <div class="cta-group">
+      <button class="button primary" id="authButton">Sign in</button>
+      <a class="button primary" href="dashboard.html">Open Dashboard</a>
+      <button class="button" id="themeToggle"><i class="fas fa-moon"></i></button>
+    </div>
+  </header>
+
+  <main class="site-shell">
+    <section class="hero landing-hero" id="home">
+      <div class="hero-copy">
+        <div class="eyebrow">Beginner Linux Studio</div>
+        <h1 class="hero-title">Learn Linux <strong>Without Fear</strong></h1>
+        <p>LinuxAid is the beginner-friendly Linux learning platform with AI guidance, terminal practice, safe command training, and community support to help you build confidence.</p>
+        <div class="hero-badges">
+          <span class="badge-pill"><i class="fas fa-robot"></i> Gemini AI Assistance</span>
+          <span class="badge-pill"><i class="fas fa-terminal"></i> Safe Terminal Simulator</span>
+          <span class="badge-pill"><i class="fas fa-map-signs"></i> Guided Roadmaps</span>
+        </div>
+        <div class="hero-actions">
+          <a class="button primary" href="dashboard.html">Start Learning</a>
+          <a class="button" href="linux.html">Explore Linux</a>
+        </div>
+      </div>
+      <div class="hero-visuals">
+        <div class="panel glass landing-panel">
+          <div class="panel-title">Trusted for Linux learners</div>
+          <p>Practice real Linux workflows safely in a browser simulator, learn command patterns, and ask AI for step-by-step explanations.</p>
+          <div class="feature-grid" style="grid-template-columns: repeat(2, minmax(0,1fr));">
+            <div class="feature-card glass">
+              <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+              <h3>Safety-first experience</h3>
+              <p>Commands are simulated and reviewed before execution, so beginners can learn without risk.</p>
+            </div>
+            <div class="feature-card glass">
+              <div class="feature-icon"><i class="fas fa-rocket"></i></div>
+              <h3>Fast skill building</h3>
+              <p>Explore Linux concepts, complete guided tasks, and use AI assistance to understand each step.</p>
+            </div>
+          </div>
+        </div>
+        <div class="panel glass landing-panel">
+          <div class="panel-title">Why LinuxAid</div>
+          <ul style="margin:0;padding-left:18px;color:var(--muted);line-height:1.9;">
+            <li>Real command reference with examples</li>
+            <li>Guided progress tracking</li>
+            <li>AI support for safe Linux learning</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="features">
+      <div class="section-title"><i class="fas fa-flask"></i><span>Core learning toolkit</span></div>
+      <h2>Everything a Linux beginner needs</h2>
+      <p class="lead">LinuxAid combines guided tutorials, safe command simulation, AI explanation, and community discussion in one polished learning environment.</p>
+      <div class="feature-grid">
+        <div class="feature-card glass">
+          <div class="feature-icon"><i class="fas fa-comments"></i></div>
+          <h3>AI Linux Chatbot</h3>
+          <p>Ask LinuxAid for command explanations, safe alternatives, and step-by-step task help tailored to beginners.</p>
+        </div>
+        <div class="feature-card glass">
+          <div class="feature-icon"><i class="fas fa-terminal"></i></div>
+          <h3>Terminal Simulator</h3>
+          <p>Practice popular Linux commands in a safe simulator with clear feedback and real command patterns.</p>
+        </div>
+        <div class="feature-card glass">
+          <div class="feature-icon"><i class="fas fa-map-signs"></i></div>
+          <h3>Learning Roadmaps</h3>
+          <p>Follow beginner and intermediate pathways with progress milestones and recommended next steps.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section linux-intro">
+      <div class="section-title"><i class="fas fa-code"></i><span>Start with Linux</span></div>
+      <h2>Learn the commands that matter first</h2>
+      <p class="lead">LinuxAid helps you build confidence by teaching the most useful commands for navigation, file operations, permissions, and scripting.</p>
+      <div class="linux-grid">
+        <div>
+          <div class="mono-card glass">
+            <h3>Beginner command set</h3>
+            <ul style="padding-left:18px;margin:0;color:var(--muted);line-height:1.8;">
+              <li><code>pwd</code> — show current folder</li>
+              <li><code>ls</code> — list files</li>
+              <li><code>cd</code> — change directories</li>
+              <li><code>cat</code> — read file contents</li>
+            </ul>
+          </div>
+          <div class="mono-card glass" style="margin-top:22px;">
+            <h3>Permissions and security</h3>
+            <p>LinuxAid teaches safe permission commands, explains the risk of <code>sudo</code>, and blocks destructive commands in the simulator.</p>
+          </div>
+        </div>
+        <div class="side-card">
+          <div class="feature-card glass">
+            <div class="feature-icon"><i class="fas fa-bolt"></i></div>
+            <h3>Ready for your first shell session</h3>
+            <p>Open the dashboard to try commands in a sandboxed terminal and get instant AI guidance.</p>
+          </div>
+          <div class="panel glass">
+            <p class="hint-box">Tip: Click the green button below to open the dashboard and use the simulator, chat, and command explorer together.</p>
+            <a class="button primary" href="dashboard.html">Open Linux Dashboard</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section footer glass" id="contact" style="margin-top:40px; padding-top:28px; padding-bottom:28px;">
+      <div class="footer-row">
+        <div>
+          <h4>LinuxAid</h4>
+          <p>Your Linux companion for safe learning, command mastery, and beginner-friendly growth.</p>
+        </div>
+        <div>
+          <h4>Quick links</h4>
+          <a href="dashboard.html">Dashboard</a><br>
+          <a href="linux.html">Linux guide</a><br>
+          <a href="#features">Features</a><br>
+          <a href="#home">Home</a>
+        </div>
+        <div>
+          <h4>Contact</h4>
+          <a href="mailto:support@linuxaid.dev">support@linuxaid.dev</a><br>
+          <a href="https://github.com/linuxaid">GitHub</a><br>
+          <span style="display:block;margin-top:12px;color:var(--muted);font-size:0.9rem;">© 2026 LinuxAid</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="auth-overlay" id="authOverlay">
+    <div class="auth-modal glass">
+      <button class="auth-close" id="closeAuth"><i class="fas fa-times"></i></button>
+      <h3>Sign in to LinuxAid</h3>
+      <p>Use our secure authentication flow to access chat history, personalized roadmaps, and safe learning tools.</p>
+      <div class="auth-form">
+        <button class="button primary" id="googleSignIn"><i class="fab fa-google"></i> Continue with Google</button>
+        <input type="email" id="authEmail" placeholder="Email address" />
+        <input type="password" id="authPassword" placeholder="Password" />
+        <button class="button" id="emailSignIn">Sign in with email</button>
+        <p style="color:var(--muted);font-size:0.92rem;text-align:center;">This demo uses local browser session state to simulate Firebase Authentication.</p>
+      </div>
+    </div>
+  </div>
+  <button class="back-to-top" id="backToTop"><i class="fas fa-arrow-up"></i></button>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
