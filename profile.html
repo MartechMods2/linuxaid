@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="View your LinuxAid learning progress, achievements and preferences.">
+  <title>LinuxAid | Profile</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="product.css">
+  <script src="config.js"></script>
+</head>
+<body data-page="profile">
+  <header class="navbar">
+    <div class="brand"><div style="width:44px;height:44px;border-radius:18px;background:rgba(35,255,139,.15);display:grid;place-items:center;color:var(--green);font-weight:900">L</div><div><h1>LinuxAid</h1><div style="font-size:.82rem;color:var(--muted);margin-top:4px">Learner profile</div></div></div>
+    <nav class="nav-links"><a href="index.html">Home</a><a href="dashboard.html">Dashboard</a><a href="courses.html">Courses</a><a href="labs.html">Labs</a><a href="tools.html">Tools</a></nav>
+    <div class="cta-group"><a class="button primary" href="auth.html">Account</a><button class="button" id="themeToggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button></div>
+  </header>
+  <main class="site-shell" id="main-content">
+    <section class="product-hero" style="padding-bottom:32px">
+      <div class="eyebrow">Your LinuxAid workspace</div>
+      <h1>Progress you can actually see.</h1>
+      <p>Your profile combines simulator activity, lessons, labs, streaks and achievements. Browser-only progress works immediately; Firebase can sync profile details when configured.</p>
+    </section>
+
+    <section class="section" style="padding-top:10px">
+      <div class="profile-header">
+        <div class="avatar-orb" id="profileAvatar">L</div>
+        <div><h2 id="profileName" style="margin:0 0 6px">LinuxAid Learner</h2><p id="profileIdentity" style="margin:0;color:var(--muted)">Browser profile</p></div>
+        <a class="button" href="auth.html" id="accountAction">Manage account</a>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:24px">
+      <div class="stat-grid" id="profileStats"></div>
+    </section>
+
+    <section class="section" style="padding-top:24px">
+      <div class="product-layout">
+        <div>
+          <div class="tool-panel">
+            <div class="section-title"><i class="fas fa-trophy"></i><span>Achievements</span></div>
+            <div id="achievementGrid" class="hero-badges"></div>
+          </div>
+          <div class="tool-panel" style="margin-top:18px">
+            <div class="section-title"><i class="fas fa-chart-simple"></i><span>Skill map</span></div>
+            <div id="skillMap"></div>
+          </div>
+        </div>
+        <aside class="product-sidebar">
+          <div class="tool-panel">
+            <h3>Learner preferences</h3>
+            <form id="profileForm" class="auth-form-grid">
+              <label class="form-label">Display name<input class="form-control" id="profileDisplayName" maxlength="80" placeholder="LinuxAid Learner"></label>
+              <label class="form-label">Primary distro<select class="form-control" id="profileDistro"><option value="">Not selected</option><option>Ubuntu</option><option>Debian</option><option>Kali</option><option>Fedora</option><option>Arch</option><option>Linux Mint</option><option>RHEL</option></select></label>
+              <label class="form-label">Learning goal<textarea class="form-control" id="profileGoal" rows="3" maxlength="160" placeholder="e.g. Become comfortable managing a Linux server"></textarea></label>
+              <button class="button primary" type="submit">Save preferences</button>
+            </form>
+          </div>
+          <div class="tool-panel">
+            <h3>Progress portability</h3>
+            <p style="color:var(--muted);line-height:1.7">Export your local progress as JSON before clearing a browser or moving machines.</p>
+            <div style="display:grid;gap:10px"><button class="button" id="exportProgress" type="button">Export progress</button><label class="button" style="text-align:center;cursor:pointer">Import progress<input id="importProgress" type="file" accept="application/json" hidden></label><button class="button" id="resetProgress" type="button" style="color:var(--danger)">Reset local progress</button></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section footer glass" style="margin-top:30px;padding:28px"><div class="footer-row"><div><h4>LinuxAid Profile</h4><p>Your learning data should help you choose the next useful skill.</p></div><div><h4>Continue</h4><a href="courses.html">Courses</a><br><a href="labs.html">Labs</a><br><a href="dashboard.html">Dashboard</a></div><div><h4>Project</h4><a href="https://github.com/MartechMods2/linuxaid">GitHub repository</a></div></div></section>
+  </main>
+  <button class="back-to-top" id="backToTop"><i class="fas fa-arrow-up"></i></button>
+  <script type="module" src="js/profilePage.js"></script>
+</body>
+</html>

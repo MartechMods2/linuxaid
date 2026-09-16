@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Sign in or create a LinuxAid account to sync your Linux learning progress.">
+  <meta name="theme-color" content="#061018">
+  <title>LinuxAid | Account</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="product.css">
+  <script src="config.js"></script>
+</head>
+<body data-page="auth">
+  <main class="auth-page-shell" id="main-content">
+    <section class="auth-showcase">
+      <a href="index.html" class="badge-pill" style="width:fit-content;margin-bottom:auto"><i class="fas fa-arrow-left"></i> Back to LinuxAid</a>
+      <div>
+        <div class="eyebrow">Your Linux learning identity</div>
+        <h1>Build skills. Keep progress.</h1>
+        <p>Create a free LinuxAid account to keep your chat history, learner profile and progress ready across devices when Firebase is configured.</p>
+        <div class="hero-badges" style="margin-top:24px">
+          <span class="badge-pill"><i class="fas fa-shield-halved"></i> Firebase-ready auth</span>
+          <span class="badge-pill"><i class="fas fa-cloud-arrow-up"></i> Progress sync</span>
+          <span class="badge-pill"><i class="fas fa-lock"></i> No AI keys in browser</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="auth-panel">
+      <div class="auth-card">
+        <div class="eyebrow">LinuxAid Account</div>
+        <h2 id="authHeading" style="margin:0 0 8px">Welcome back</h2>
+        <p id="authSubheading" style="color:var(--muted);margin:0 0 22px">Sign in to continue your learning journey.</p>
+        <div id="authMessage" class="auth-message" role="status" aria-live="polite"></div>
+
+        <div class="auth-tabs" role="tablist" aria-label="Account action">
+          <button class="auth-tab active" type="button" data-auth-tab="signin" role="tab" aria-selected="true">Sign in</button>
+          <button class="auth-tab" type="button" data-auth-tab="create" role="tab" aria-selected="false">Create account</button>
+        </div>
+
+        <button class="button primary" id="authGoogle" type="button" style="width:100%"><i class="fab fa-google"></i> Continue with Google</button>
+        <div class="auth-divider">or use email</div>
+
+        <form id="authForm" class="auth-form-grid" novalidate>
+          <label class="form-label" id="nameField" hidden>
+            Display name
+            <input class="form-control" id="authName" type="text" maxlength="80" autocomplete="name" placeholder="How should LinuxAid call you?">
+          </label>
+          <label class="form-label">
+            Email address
+            <input class="form-control" id="authPageEmail" type="email" autocomplete="email" required placeholder="you@example.com">
+          </label>
+          <label class="form-label">
+            Password
+            <div style="display:flex;gap:8px">
+              <input class="form-control" id="authPagePassword" type="password" minlength="8" autocomplete="current-password" required placeholder="At least 8 characters">
+              <button class="button" id="togglePassword" type="button" aria-label="Show password"><i class="fas fa-eye"></i></button>
+            </div>
+          </label>
+          <label class="form-label" id="confirmField" hidden>
+            Confirm password
+            <input class="form-control" id="authConfirmPassword" type="password" minlength="8" autocomplete="new-password" placeholder="Repeat password">
+          </label>
+          <button class="button primary" id="authSubmit" type="submit" style="width:100%">Sign in</button>
+        </form>
+
+        <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:16px">
+          <button class="button" id="forgotPassword" type="button">Forgot password?</button>
+          <button class="button" id="demoMode" type="button">Continue in demo mode</button>
+        </div>
+
+        <p style="margin:20px 0 0;color:var(--muted);font-size:.82rem;line-height:1.65">LinuxAid never stores your password itself. When Firebase is configured, authentication is handled by Firebase Authentication. In preview mode, no real account is created.</p>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="js/authPage.js"></script>
+</body>
+</html>

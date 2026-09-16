@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Analyze Linux commands, permissions, distro package commands and terminal errors with LinuxAid.">
+  <title>LinuxAid | Tools</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="product.css">
+  <script src="config.js"></script>
+</head>
+<body data-page="tools">
+  <header class="navbar">
+    <div class="brand"><div style="width:44px;height:44px;border-radius:18px;background:rgba(35,255,139,.15);display:grid;place-items:center;color:var(--green);font-weight:900">L</div><div><h1>LinuxAid</h1><div style="font-size:.82rem;color:var(--muted);margin-top:4px">Linux troubleshooting toolkit</div></div></div>
+    <nav class="nav-links"><a href="index.html">Home</a><a href="dashboard.html">Dashboard</a><a href="courses.html">Courses</a><a href="labs.html">Labs</a><a href="tools.html">Tools</a></nav>
+    <div class="cta-group"><a class="button" href="profile.html">Profile</a><a class="button primary" href="auth.html">Account</a><button class="button" id="themeToggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button></div>
+  </header>
+  <main class="site-shell" id="main-content">
+    <section class="product-hero">
+      <div class="eyebrow">LinuxAid Utilities</div>
+      <h1>Understand before you run.</h1>
+      <p>Use deterministic tools for common Linux questions: command risk, permissions, distro package syntax and error interpretation. These tools work locally and do not need AI.</p>
+    </section>
+
+    <section class="section" style="padding-top:20px">
+      <div class="tool-grid">
+        <article class="tool-panel" id="commandAnalyzerPanel">
+          <div class="feature-icon"><i class="fas fa-shield-halved"></i></div>
+          <h3>Command Safety Analyzer</h3>
+          <p style="color:var(--muted);line-height:1.7">Paste a command before running it on a real machine.</p>
+          <textarea class="tool-input" id="commandToAnalyze" rows="4" placeholder="sudo chmod 777 /var/www"></textarea>
+          <button class="button primary" id="analyzeCommand" type="button" style="margin-top:12px">Analyze command</button>
+          <div class="tool-result" id="commandAnalysisResult">Risk analysis will appear here.</div>
+        </article>
+
+        <article class="tool-panel">
+          <div class="feature-icon"><i class="fas fa-key"></i></div>
+          <h3>Permission Decoder</h3>
+          <p style="color:var(--muted);line-height:1.7">Decode numeric modes or convert symbolic permissions.</p>
+          <input class="tool-input" id="permissionInput" placeholder="755 or rwxr-xr-x">
+          <button class="button primary" id="decodePermission" type="button" style="margin-top:12px">Decode permissions</button>
+          <div class="tool-result" id="permissionResult">Permission details will appear here.</div>
+        </article>
+
+        <article class="tool-panel">
+          <div class="feature-icon"><i class="fas fa-arrows-rotate"></i></div>
+          <h3>Distro Command Converter</h3>
+          <p style="color:var(--muted);line-height:1.7">Translate package commands between common Linux families.</p>
+          <input class="tool-input" id="packageCommand" placeholder="sudo apt install nginx">
+          <select class="tool-select" id="targetDistro" style="margin-top:10px">
+            <option value="ubuntu">Ubuntu / Debian / Mint / Kali</option>
+            <option value="fedora">Fedora / RHEL family</option>
+            <option value="arch">Arch / Manjaro</option>
+          </select>
+          <button class="button primary" id="translateCommand" type="button" style="margin-top:12px">Translate command</button>
+          <div class="tool-result" id="translationResult">Translated command will appear here.</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:20px">
+      <div class="product-layout">
+        <article class="tool-panel">
+          <div class="feature-icon"><i class="fas fa-bug"></i></div>
+          <h2 style="margin-bottom:8px">Linux Error Interpreter</h2>
+          <p style="color:var(--muted);line-height:1.7">Paste the exact error message. LinuxAid will identify common causes and recommend inspection steps before changes.</p>
+          <textarea class="tool-input" id="errorInput" rows="7" placeholder="bash: ./deploy.sh: Permission denied"></textarea>
+          <button class="button primary" id="interpretError" type="button" style="margin-top:12px">Interpret error</button>
+          <div class="tool-result" id="errorResult">Error diagnosis will appear here.</div>
+        </article>
+        <aside class="product-sidebar">
+          <div class="tool-panel"><div class="eyebrow">LinuxAid rule</div><h3>Inspect → change → verify</h3><p style="color:var(--muted);line-height:1.75">Good troubleshooting avoids random commands. Prove the current state first, make the smallest safe change, then verify the result.</p></div>
+          <div class="tool-panel"><h3>Need deeper help?</h3><p style="color:var(--muted);line-height:1.7">Take the exact output to the AI tutor after running the deterministic checks.</p><a class="button primary" href="dashboard.html#assistant">Ask LinuxAid AI</a></div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section footer glass" style="margin-top:30px;padding:28px"><div class="footer-row"><div><h4>LinuxAid Tools</h4><p>Fast, local Linux reasoning before you touch a real system.</p></div><div><h4>Practice</h4><a href="labs.html">Hands-on labs</a><br><a href="courses.html">Courses</a><br><a href="dashboard.html#terminal">Terminal V2</a></div><div><h4>Project</h4><a href="https://github.com/MartechMods2/linuxaid">GitHub repository</a></div></div></section>
+  </main>
+  <button class="back-to-top" id="backToTop"><i class="fas fa-arrow-up"></i></button>
+  <script type="module" src="js/toolsPage.js"></script>
+</body>
+</html>
