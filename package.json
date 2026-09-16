@@ -1,11 +1,11 @@
 {
   "name": "linuxaid",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
-  "description": "AI-assisted Linux learning, command exploration and safe terminal practice.",
+  "description": "AI-assisted Linux learning, terminal labs, troubleshooting tools and safe command practice.",
   "scripts": {
-    "check": "node --check app.js && node --check firebase.js && node --check gemini.js && node --check api/ai.js && node --check js/security.js && node --check js/commandCatalog.js && node --check js/terminalEngine.js && node --check js/progress.js",
+    "check": "node --check app.js && node --check firebase.js && node --check gemini.js && node --check api/ai.js && node --check service-worker.js && find js -name '*.js' -print0 | xargs -0 -n1 node --check",
     "test": "node --test",
     "ci": "npm run check && npm test"
   },
