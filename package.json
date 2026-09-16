@@ -1,0 +1,15 @@
+{
+  "name": "linuxaid",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AI-assisted Linux learning, command exploration and safe terminal practice.",
+  "scripts": {
+    "check": "node --check app.js && node --check firebase.js && node --check gemini.js && node --check api/ai.js && node --check js/security.js && node --check js/commandCatalog.js && node --check js/terminalEngine.js && node --check js/progress.js",
+    "test": "node --test",
+    "ci": "npm run check && npm test"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
