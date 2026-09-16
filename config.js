@@ -7,9 +7,8 @@ window.LINUXAID_CONFIG = {
   backend: {
     provider: 'supabase',
     supabase: {
-      // Fill these from Supabase -> Project Settings -> API.
-      url: '',
-      publishableKey: '',
+      url: 'https://qkpamdanjnxniwdinodi.supabase.co',
+      publishableKey: 'sb_publishable_wTI5I06u46jE2DcCpelhYw_n6VYNps6',
       // `anonKey` remains supported for older Supabase projects.
       anonKey: ''
     },
@@ -27,7 +26,7 @@ window.LINUXAID_CONFIG = {
   analytics: {
     provider: 'posthog',
     // PostHog project API keys are intended for client-side SDK use.
-    posthogKey: '',
+    posthogKey: 'phc_kWsQD4Tvvy4ubUm8KiQ73wG6TTKnNpHAa5AJ4AKNFrki',
     posthogHost: 'https://us.i.posthog.com',
     sessionReplay: false,
     respectDoNotTrack: true
