@@ -20,7 +20,8 @@ window.LINUXAID_CONFIG = {
 // entry point to attach the shared product shell without duplicating script tags.
 Promise.all([
   import('./js/siteEnhancements.js'),
-  import('./js/pageBasics.js')
+  import('./js/pageBasics.js'),
+  import('./js/navExtras.js')
 ]).catch(error => {
   console.warn('LinuxAid shared product runtime could not be loaded:', error);
 });
