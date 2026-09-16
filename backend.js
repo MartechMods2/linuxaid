@@ -5,6 +5,7 @@ const state = {
   ready:false,
   client:null,
   config:null,
+  initPromise:null,
   authSubscriptions:new Set(),
   lastUser:null
 };
@@ -27,84 +28,92 @@ function backendConfig(config = {}) {
   return config.backend || config;
 }
 
+function supabaseConfig(config = {}) {
+  return backendConfig(config).supabase || config.supabase || {};
+}
+
+function firebaseConfig(config = {}) {
+  return backendConfig(config).firebase || config.firebase || {};
+}
+
 function hasSupabase(config = {}) {
-  const source = backendConfig(config).supabase || config.supabase || {};
+  const source = supabaseConfig(config);
   return Boolean(source.url && (source.publishableKey || source.anonKey));
 }
 
 function hasFirebase(config = {}) {
-  const source = backendConfig(config).firebase || config.firebase || {};
+  const source = firebaseConfig(config);
   return Boolean(source.apiKey && source.projectId);
 }
 
+function notifyAuth(user) {
+  state.lastUser = normalizeUser(user);
+  state.authSubscriptions.forEach(callback => {
+    try { callback(state.lastUser); }
+    catch (error) { console.error('LinuxAid auth listener failed:', error); }
+  });
+}
+
 async function initSupabase(config) {
-  const source = backendConfig(config).supabase || config.supabase;
+  const source = supabaseConfig(config);
   const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
   state.client = createClient(source.url, source.publishableKey || source.anonKey, {
-    auth:{
-      persistSession:true,
-      autoRefreshToken:true,
-      detectSessionInUrl:true,
-      flowType:'pkce'
-    },
+    auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, flowType:'pkce' },
     global:{ headers:{ 'X-Client-Info':'linuxaid-web' } }
   });
   state.provider = 'supabase';
   state.ready = true;
 
-  const { data } = await state.client.auth.getSession();
-  state.lastUser = normalizeUser(data?.session?.user || null);
-  state.client.auth.onAuthStateChange((_event, session) => {
-    state.lastUser = normalizeUser(session?.user || null);
-    state.authSubscriptions.forEach(callback => {
-      try { callback(state.lastUser); } catch (error) { console.error('LinuxAid auth listener failed:', error); }
-    });
-  });
+  const { data, error } = await state.client.auth.getSession();
+  if (error) console.warn('LinuxAid Supabase session restore failed:', error);
+  notifyAuth(data?.session?.user || null);
+  state.client.auth.onAuthStateChange((_event, session) => notifyAuth(session?.user || null));
   return true;
 }
 
 function initFirebase(config) {
-  const source = backendConfig(config).firebase || config.firebase;
+  const source = firebaseConfig(config);
   if (!firebaseBackend.initFirebase(source)) return false;
   state.provider = 'firebase';
   state.ready = true;
-  firebaseBackend.onAuthStateChangedListener(user => {
-    state.lastUser = normalizeUser(user);
-    state.authSubscriptions.forEach(callback => {
-      try { callback(state.lastUser); } catch (error) { console.error('LinuxAid auth listener failed:', error); }
-    });
-  });
+  firebaseBackend.onAuthStateChangedListener(user => notifyAuth(user));
   return true;
 }
 
 export async function initBackend(config = window.LINUXAID_CONFIG || {}) {
   if (state.ready) return state.provider;
-  state.config = config;
-  const preferred = String(config.backendProvider || backendConfig(config).provider || '').toLowerCase();
+  if (state.initPromise) return state.initPromise;
 
-  try {
-    if ((preferred === 'supabase' || !preferred) && hasSupabase(config)) {
-      await initSupabase(config);
-      return state.provider;
+  state.config = config;
+  state.initPromise = (async () => {
+    const preferred = String(config.backendProvider || backendConfig(config).provider || '').toLowerCase();
+    try {
+      if ((preferred === 'supabase' || !preferred) && hasSupabase(config)) {
+        await initSupabase(config);
+        return state.provider;
+      }
+      if ((preferred === 'firebase' || !preferred) && hasFirebase(config)) {
+        initFirebase(config);
+        return state.provider;
+      }
+      if (hasSupabase(config)) {
+        await initSupabase(config);
+        return state.provider;
+      }
+      if (hasFirebase(config)) {
+        initFirebase(config);
+        return state.provider;
+      }
+    } catch (error) {
+      console.error('LinuxAid backend initialization failed:', error);
+      state.provider = 'none';
+      state.ready = false;
     }
-    if ((preferred === 'firebase' || !preferred) && hasFirebase(config)) {
-      initFirebase(config);
-      return state.provider;
-    }
-    if (hasSupabase(config)) {
-      await initSupabase(config);
-      return state.provider;
-    }
-    if (hasFirebase(config)) {
-      initFirebase(config);
-      return state.provider;
-    }
-  } catch (error) {
-    console.error('LinuxAid backend initialization failed:', error);
-    state.provider = 'none';
-    state.ready = false;
-  }
-  return 'none';
+    return 'none';
+  })();
+
+  try { return await state.initPromise; }
+  finally { state.initPromise = null; }
 }
 
 export function getBackendStatus() {
@@ -123,8 +132,7 @@ export async function getCurrentUser() {
   if (state.provider === 'supabase') {
     const { data, error } = await state.client.auth.getUser();
     if (error && error.status !== 401) throw error;
-    state.lastUser = normalizeUser(data?.user || null);
-    return state.lastUser;
+    notifyAuth(data?.user || null);
   }
   return state.lastUser;
 }
@@ -148,7 +156,7 @@ export async function signInWithEmailClient(email, password) {
   if (state.provider === 'supabase') {
     const { data, error } = await state.client.auth.signInWithPassword({ email, password });
     if (error) throw error;
-    state.lastUser = normalizeUser(data.user);
+    notifyAuth(data.user);
     return state.lastUser;
   }
   return normalizeUser(await firebaseBackend.signInWithEmailClient(email, password));
@@ -164,8 +172,8 @@ export async function createAccountWithEmailClient(email, password, displayName=
       options:{ data:{ display_name:displayName }, emailRedirectTo }
     });
     if (error) throw error;
-    state.lastUser = normalizeUser(data.user);
-    return state.lastUser;
+    notifyAuth(data.session?.user || null);
+    return normalizeUser(data.user);
   }
   return normalizeUser(await firebaseBackend.createAccountWithEmailClient(email, password, displayName));
 }
@@ -178,7 +186,8 @@ export async function sendPasswordResetClient(email) {
     if (error) throw error;
     return true;
   }
-  return firebaseBackend.sendPasswordResetClient(email);
+  await firebaseBackend.sendPasswordResetClient(email);
+  return true;
 }
 
 export async function updatePasswordClient(password) {
@@ -186,7 +195,8 @@ export async function updatePasswordClient(password) {
   if (state.provider === 'supabase') {
     const { data, error } = await state.client.auth.updateUser({ password });
     if (error) throw error;
-    return normalizeUser(data.user);
+    notifyAuth(data.user);
+    return state.lastUser;
   }
   throw new Error('Password recovery update is currently available through the Supabase backend.');
 }
@@ -201,7 +211,8 @@ export async function sendEmailVerificationClient() {
     if (error) throw error;
     return true;
   }
-  return firebaseBackend.sendEmailVerificationClient?.();
+  await firebaseBackend.sendEmailVerificationClient?.();
+  return true;
 }
 
 export async function signOutClient() {
@@ -209,11 +220,10 @@ export async function signOutClient() {
   if (state.provider === 'supabase') {
     const { error } = await state.client.auth.signOut();
     if (error) throw error;
-    state.lastUser = null;
-    return;
+  } else {
+    await firebaseBackend.signOutClient();
   }
-  await firebaseBackend.signOutClient();
-  state.lastUser = null;
+  notifyAuth(null);
 }
 
 export async function getAuthHeaders() {
@@ -278,14 +288,15 @@ export async function loadUserProfile(uid = state.lastUser?.uid) {
 export async function saveUserProfile(uid = state.lastUser?.uid, profile = {}) {
   if (!state.ready || !uid) return;
   if (state.provider === 'supabase') {
-    const { error } = await state.client.from('profiles').upsert({
+    const payload = {
       id:uid,
       display_name:String(profile.displayName || '').slice(0,80),
       distro:String(profile.distro || '').slice(0,40),
       learning_goal:String(profile.learningGoal || '').slice(0,500),
-      avatar_url:String(profile.avatarUrl || '').slice(0,500),
+      avatar_url:String(profile.avatarUrl || profile.photoURL || '').slice(0,500),
       updated_at:new Date().toISOString()
-    }, { onConflict:'id' });
+    };
+    const { error } = await state.client.from('profiles').upsert(payload, { onConflict:'id' });
     if (error) throw error;
     return;
   }
@@ -299,18 +310,23 @@ export async function loadSyncedProgress(uid = state.lastUser?.uid) {
     if (error) throw error;
     return data ? { progress:data.progress || null, learning:data.learning || null } : null;
   }
-  return null;
+  const progress = await firebaseBackend.loadLearningProgress?.(uid);
+  return progress ? { progress, learning:null } : null;
 }
 
 export async function saveSyncedProgress(progress, learning, uid = state.lastUser?.uid) {
-  if (!state.ready || !uid || state.provider !== 'supabase') return;
-  const { error } = await state.client.from('learner_state').upsert({
-    user_id:uid,
-    progress:progress || {},
-    learning:learning || {},
-    updated_at:new Date().toISOString()
-  }, { onConflict:'user_id' });
-  if (error) throw error;
+  if (!state.ready || !uid) return;
+  if (state.provider === 'supabase') {
+    const { error } = await state.client.from('learner_state').upsert({
+      user_id:uid,
+      progress:progress || {},
+      learning:learning || {},
+      updated_at:new Date().toISOString()
+    }, { onConflict:'user_id' });
+    if (error) throw error;
+    return;
+  }
+  if (progress) await firebaseBackend.saveLearningProgress?.(uid, progress);
 }
 
 export async function loadCommunityPosts() {
@@ -318,7 +334,7 @@ export async function loadCommunityPosts() {
   if (state.provider === 'supabase') {
     const { data, error } = await state.client
       .from('community_posts')
-      .select('id,title,body,upvotes_count,reply_count,created_at,profiles!community_posts_author_id_fkey(display_name)')
+      .select('id,title,body,author_name,upvotes_count,reply_count,created_at')
       .order('created_at', { ascending:false })
       .limit(50);
     if (error) throw error;
@@ -328,7 +344,7 @@ export async function loadCommunityPosts() {
       body:post.body,
       replies:post.reply_count || 0,
       upvotes:post.upvotes_count || 0,
-      meta:`${post.profiles?.display_name || 'LinuxAid learner'} • ${new Date(post.created_at).toLocaleString()}`
+      meta:`${post.author_name || 'LinuxAid learner'} • ${new Date(post.created_at).toLocaleString()}`
     }));
   }
   return firebaseBackend.loadCommunityPosts();
@@ -369,12 +385,17 @@ export async function loadCommunityReplies(postId) {
   if (!state.ready || state.provider !== 'supabase') return [];
   const { data, error } = await state.client
     .from('community_replies')
-    .select('id,body,created_at,profiles!community_replies_author_id_fkey(display_name)')
+    .select('id,body,author_name,created_at')
     .eq('post_id',postId)
     .order('created_at', { ascending:true })
     .limit(100);
   if (error) throw error;
-  return (data || []).map(reply => ({ ...reply, displayName:reply.profiles?.display_name || 'LinuxAid learner' }));
+  return (data || []).map(reply => ({
+    id:reply.id,
+    body:reply.body,
+    displayName:reply.author_name || 'LinuxAid learner',
+    createdAt:reply.created_at
+  }));
 }
 
 export async function saveCommunityReply(postId, body) {
@@ -389,6 +410,19 @@ export async function saveCommunityReply(postId, body) {
   return data;
 }
 
+export async function loadNotifications(limit = 30) {
+  if (!state.ready || state.provider !== 'supabase' || !state.lastUser?.uid) return [];
+  const { data, error } = await state.client.from('notifications').select('*').eq('user_id',state.lastUser.uid).order('created_at',{ ascending:false }).limit(Math.min(100,Math.max(1,limit)));
+  if (error) throw error;
+  return data || [];
+}
+
+export async function markNotificationRead(id) {
+  if (!state.ready || state.provider !== 'supabase' || !state.lastUser?.uid) return;
+  const { error } = await state.client.from('notifications').update({ read_at:new Date().toISOString() }).eq('id',id).eq('user_id',state.lastUser.uid);
+  if (error) throw error;
+}
+
 export async function uploadAvatar(file) {
   if (!state.ready || state.provider !== 'supabase') throw new Error('Avatar uploads require the Supabase backend.');
   const userId = requireUserId();
@@ -399,7 +433,8 @@ export async function uploadAvatar(file) {
   const { error } = await state.client.storage.from('avatars').upload(path, file, { upsert:true, contentType:file.type, cacheControl:'3600' });
   if (error) throw error;
   const { data } = state.client.storage.from('avatars').getPublicUrl(path);
-  await saveUserProfile(userId, { ...(await loadUserProfile(userId) || {}), avatarUrl:data.publicUrl });
+  const current = await loadUserProfile(userId) || {};
+  await saveUserProfile(userId, { ...current, avatarUrl:data.publicUrl });
   return data.publicUrl;
 }
 
