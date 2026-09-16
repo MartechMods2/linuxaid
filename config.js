@@ -18,6 +18,9 @@ window.LINUXAID_CONFIG = {
 
 // Every current LinuxAid page already loads config.js in <head>. Use that stable
 // entry point to attach the shared product shell without duplicating script tags.
-import('./js/siteEnhancements.js').catch(error => {
-  console.warn('LinuxAid product enhancements could not be loaded:', error);
+Promise.all([
+  import('./js/siteEnhancements.js'),
+  import('./js/pageBasics.js')
+]).catch(error => {
+  console.warn('LinuxAid shared product runtime could not be loaded:', error);
 });
