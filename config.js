@@ -8,5 +8,16 @@ window.LINUXAID_CONFIG = {
     provider: 'server',
     // Emergency development-only compatibility. Keep false in production.
     allowInsecureBrowserAI: false
+  },
+  product: {
+    name: 'LinuxAid',
+    repository: 'https://github.com/MartechMods2/linuxaid',
+    website: 'https://martechmods2.github.io/linuxaid/'
   }
 };
+
+// Every current LinuxAid page already loads config.js in <head>. Use that stable
+// entry point to attach the shared product shell without duplicating script tags.
+import('./js/siteEnhancements.js').catch(error => {
+  console.warn('LinuxAid product enhancements could not be loaded:', error);
+});
