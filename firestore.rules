@@ -14,28 +14,38 @@ service cloud.firestore {
     }
 
     match /chatHistory/{uid} {
-      allow read, create, update, delete: if isOwner(uid);
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.messages is list
+        && request.resource.data.messages.size() <= 60;
     }
 
     match /profiles/{uid} {
       allow read: if isOwner(uid) || isAdmin();
-      allow create, update, delete: if isOwner(uid);
+      allow delete: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && (!('displayName' in request.resource.data) || (request.resource.data.displayName is string && request.resource.data.displayName.size() <= 80))
+        && (!('photoURL' in request.resource.data) || (request.resource.data.photoURL is string && request.resource.data.photoURL.size() <= 1000))
+        && (!('distro' in request.resource.data) || (request.resource.data.distro is string && request.resource.data.distro.size() <= 40))
+        && (!('learningGoal' in request.resource.data) || (request.resource.data.learningGoal is string && request.resource.data.learningGoal.size() <= 160));
     }
 
     match /progress/{uid} {
-      allow read, create, update, delete: if isOwner(uid);
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && (!('xp' in request.resource.data) || (request.resource.data.xp is int && request.resource.data.xp >= 0 && request.resource.data.xp <= 10000000));
     }
 
     match /communityPosts/{postId} {
       allow read: if true;
       allow create: if signedIn()
-        && request.resource.data.authorUid == request.auth.uid
+        && request.resource.data.authorId == request.auth.uid
         && request.resource.data.title is string
-        && request.resource.data.title.size() <= 160
+        && request.resource.data.title.size() <= 140
         && request.resource.data.body is string
-        && request.resource.data.body.size() <= 4000;
+        && request.resource.data.body.size() <= 5000;
       allow update, delete: if signedIn()
-        && (resource.data.authorUid == request.auth.uid || isAdmin());
+        && (resource.data.authorId == request.auth.uid || isAdmin());
     }
 
     match /{document=**} {
