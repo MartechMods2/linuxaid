@@ -39,14 +39,15 @@ window.LINUXAID_CONFIG = {
   }
 };
 
-// Backward compatibility for code that still reads `config.firebase` directly.
+// Old pages may still read this property. It remains null when Supabase is used.
 window.LINUXAID_CONFIG.firebase = window.LINUXAID_CONFIG.backend.firebase;
 
 Promise.all([
   import('./js/siteEnhancements.js'),
   import('./js/pageBasics.js'),
   import('./js/navExtras.js'),
-  import('./js/analytics.js')
+  import('./js/analytics.js'),
+  import('./js/sync.js')
 ]).catch(error => {
   console.warn('LinuxAid shared product runtime could not be loaded:', error);
 });
