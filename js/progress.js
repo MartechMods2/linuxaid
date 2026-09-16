@@ -23,6 +23,11 @@ function storageAvailable() {
   try { return typeof localStorage !== 'undefined'; } catch { return false; }
 }
 
+function emitProgress(progress) {
+  if (typeof document === 'undefined') return;
+  document.dispatchEvent(new CustomEvent('linuxaid:progress-changed',{ detail:{ progress } }));
+}
+
 export function readProgress() {
   if (!storageAvailable()) return freshProgress();
   try {
@@ -39,7 +44,7 @@ export function readProgress() {
 function dayKey(date = new Date()) { return date.toISOString().slice(0,10); }
 function daysBetween(a,b) { return Math.round((new Date(`${b}T00:00:00Z`) - new Date(`${a}T00:00:00Z`)) / 86400000); }
 
-export function writeProgress(progress) {
+export function writeProgress(progress, { silent=false } = {}) {
   const normalized = {
     ...freshProgress(), ...progress,
     xp:Math.max(0, Math.round(Number(progress.xp) || 0)),
@@ -51,6 +56,7 @@ export function writeProgress(progress) {
     updatedAt:new Date().toISOString()
   };
   if (storageAvailable()) localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+  if (!silent) emitProgress(normalized);
   return normalized;
 }
 
@@ -86,7 +92,9 @@ export function recordCommandUsage(command) {
     progress.learnedCommands.push(name);
     progress.xp = (progress.xp || 0) + 15;
   } else progress.xp = (progress.xp || 0) + 2;
-  return writeProgress(unlockAchievements(progress));
+  const result = writeProgress(unlockAchievements(progress));
+  if (typeof document !== 'undefined') document.dispatchEvent(new CustomEvent('linuxaid:command-run',{ detail:{ command:name } }));
+  return result;
 }
 
 export function awardXP(amount, reason='learning', counters={}) {
@@ -117,15 +125,17 @@ export function exportProgress() {
   return { version:2, exportedAt:new Date().toISOString(), progress:readProgress() };
 }
 
-export function importProgress(payload) {
+export function importProgress(payload, options={}) {
   const data = payload?.progress || payload;
   if (!data || typeof data !== 'object') throw new Error('Invalid LinuxAid progress file.');
-  return writeProgress(data);
+  return writeProgress(data, options);
 }
 
 export function resetProgress() {
   if (storageAvailable()) localStorage.removeItem(STORAGE_KEY);
-  return freshProgress();
+  const fresh = freshProgress();
+  emitProgress(fresh);
+  return fresh;
 }
 
 export function renderRoadmapProgress(root = typeof document !== 'undefined' ? document : null) {
