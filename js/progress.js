@@ -10,6 +10,9 @@ const freshProgress = () => ({
   xp: 0,
   commandsRun: 0,
   learnedCommands: [],
+  achievements: [],
+  labsCompleted: 0,
+  lessonsCompleted: 0,
   streakDays: 0,
   lastActiveDate: null,
   firstSeenAt: new Date().toISOString(),
@@ -17,11 +20,7 @@ const freshProgress = () => ({
 });
 
 function storageAvailable() {
-  try {
-    return typeof localStorage !== 'undefined';
-  } catch {
-    return false;
-  }
+  try { return typeof localStorage !== 'undefined'; } catch { return false; }
 }
 
 export function readProgress() {
@@ -29,68 +28,104 @@ export function readProgress() {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
     if (!parsed || typeof parsed !== 'object') return freshProgress();
-    return { ...freshProgress(), ...parsed, learnedCommands:Array.isArray(parsed.learnedCommands) ? parsed.learnedCommands : [] };
-  } catch {
-    return freshProgress();
-  }
+    return {
+      ...freshProgress(), ...parsed,
+      learnedCommands:Array.isArray(parsed.learnedCommands) ? parsed.learnedCommands : [],
+      achievements:Array.isArray(parsed.achievements) ? parsed.achievements : []
+    };
+  } catch { return freshProgress(); }
 }
 
-function dayKey(date = new Date()) {
-  return date.toISOString().slice(0,10);
-}
-
-function daysBetween(a, b) {
-  return Math.round((new Date(`${b}T00:00:00Z`) - new Date(`${a}T00:00:00Z`)) / 86400000);
-}
+function dayKey(date = new Date()) { return date.toISOString().slice(0,10); }
+function daysBetween(a,b) { return Math.round((new Date(`${b}T00:00:00Z`) - new Date(`${a}T00:00:00Z`)) / 86400000); }
 
 export function writeProgress(progress) {
   const normalized = {
-    ...freshProgress(),
-    ...progress,
+    ...freshProgress(), ...progress,
+    xp:Math.max(0, Math.round(Number(progress.xp) || 0)),
+    commandsRun:Math.max(0, Math.round(Number(progress.commandsRun) || 0)),
+    labsCompleted:Math.max(0, Math.round(Number(progress.labsCompleted) || 0)),
+    lessonsCompleted:Math.max(0, Math.round(Number(progress.lessonsCompleted) || 0)),
     learnedCommands:[...new Set((progress.learnedCommands || []).map(value => String(value).toLowerCase()))].slice(0,250),
+    achievements:[...new Set((progress.achievements || []).map(String))].slice(0,100),
     updatedAt:new Date().toISOString()
   };
   if (storageAvailable()) localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
   return normalized;
 }
 
-export function recordCommandUsage(command) {
-  const name = String(command || '').toLowerCase().trim();
-  if (!name) return readProgress();
-  const progress = readProgress();
+function touchStreak(progress) {
   const today = dayKey();
   if (progress.lastActiveDate !== today) {
     const delta = progress.lastActiveDate ? daysBetween(progress.lastActiveDate, today) : null;
     progress.streakDays = delta === 1 ? (progress.streakDays || 0) + 1 : 1;
     progress.lastActiveDate = today;
   }
+  return progress;
+}
+
+function unlockAchievements(progress) {
+  const set = new Set(progress.achievements || []);
+  if ((progress.learnedCommands || []).length >= 5) set.add('First Five');
+  if ((progress.learnedCommands || []).length >= 20) set.add('Command Explorer');
+  if ((progress.commandsRun || 0) >= 100) set.add('Terminal Regular');
+  if ((progress.streakDays || 0) >= 7) set.add('Seven Day Streak');
+  if ((progress.labsCompleted || 0) >= 5) set.add('Lab Solver');
+  if ((progress.lessonsCompleted || 0) >= 10) set.add('Course Builder');
+  if ((progress.xp || 0) >= 1000) set.add('LinuxAid 1K');
+  progress.achievements = [...set];
+  return progress;
+}
+
+export function recordCommandUsage(command) {
+  const name = String(command || '').toLowerCase().trim();
+  if (!name) return readProgress();
+  const progress = touchStreak(readProgress());
   progress.commandsRun = (progress.commandsRun || 0) + 1;
   if (!progress.learnedCommands.includes(name)) {
     progress.learnedCommands.push(name);
     progress.xp = (progress.xp || 0) + 15;
-  } else {
-    progress.xp = (progress.xp || 0) + 2;
-  }
-  return writeProgress(progress);
+  } else progress.xp = (progress.xp || 0) + 2;
+  return writeProgress(unlockAchievements(progress));
+}
+
+export function awardXP(amount, reason='learning', counters={}) {
+  const progress = touchStreak(readProgress());
+  progress.xp = (progress.xp || 0) + Math.max(0, Math.min(5000, Number(amount) || 0));
+  if (counters.lab) progress.labsCompleted = (progress.labsCompleted || 0) + 1;
+  if (counters.lesson) progress.lessonsCompleted = (progress.lessonsCompleted || 0) + 1;
+  progress.lastRewardReason = String(reason).slice(0,120);
+  return writeProgress(unlockAchievements(progress));
 }
 
 export function calculateRoadmap(progress = readProgress()) {
   const learned = new Set(progress.learnedCommands || []);
   const percentage = commands => Math.round((commands.filter(command => learned.has(command)).length / commands.length) * 100);
-  return {
-    beginner:percentage(SKILL_BUCKETS.beginner),
-    intermediate:percentage(SKILL_BUCKETS.intermediate),
-    advanced:percentage(SKILL_BUCKETS.advanced)
-  };
+  return { beginner:percentage(SKILL_BUCKETS.beginner), intermediate:percentage(SKILL_BUCKETS.intermediate), advanced:percentage(SKILL_BUCKETS.advanced) };
 }
 
 export function getProgressSummary(progress = readProgress()) {
   const roadmap = calculateRoadmap(progress);
   return {
-    ...progress,
-    roadmap,
-    level: progress.xp >= 1200 ? 'Advanced Explorer' : progress.xp >= 500 ? 'Linux Builder' : progress.xp >= 150 ? 'Command Learner' : 'Linux Starter'
+    ...progress, roadmap,
+    level: progress.xp >= 1600 ? 'Linux Navigator' : progress.xp >= 1000 ? 'Advanced Explorer' : progress.xp >= 500 ? 'Linux Builder' : progress.xp >= 150 ? 'Command Learner' : 'Linux Starter',
+    nextLevelXp: progress.xp >= 1600 ? 2500 : progress.xp >= 1000 ? 1600 : progress.xp >= 500 ? 1000 : progress.xp >= 150 ? 500 : 150
   };
+}
+
+export function exportProgress() {
+  return { version:2, exportedAt:new Date().toISOString(), progress:readProgress() };
+}
+
+export function importProgress(payload) {
+  const data = payload?.progress || payload;
+  if (!data || typeof data !== 'object') throw new Error('Invalid LinuxAid progress file.');
+  return writeProgress(data);
+}
+
+export function resetProgress() {
+  if (storageAvailable()) localStorage.removeItem(STORAGE_KEY);
+  return freshProgress();
 }
 
 export function renderRoadmapProgress(root = typeof document !== 'undefined' ? document : null) {
