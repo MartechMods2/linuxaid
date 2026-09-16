@@ -1,4 +1,4 @@
-const CACHE_NAME = 'linuxaid-v4';
+const CACHE_NAME = 'linuxaid-v5';
 const APP_SHELL = [
   './',
   './index.html',
@@ -14,6 +14,7 @@ const APP_SHELL = [
   './404.html',
   './styles.css',
   './product.css',
+  './hero-motion.css',
   './app.js',
   './config.js',
   './gemini.js',
@@ -23,6 +24,7 @@ const APP_SHELL = [
   './js/siteEnhancements.js',
   './js/pageBasics.js',
   './js/navExtras.js',
+  './js/heroMotion.js',
   './js/terminalEngine.js',
   './js/commandCatalog.js',
   './js/security.js',
@@ -57,8 +59,13 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
 
-  // Never cache API or Firebase traffic.
-  if (url.pathname.includes('/api/') || url.hostname.includes('googleapis.com') || url.hostname.includes('firebase')) return;
+  // Never cache application APIs, authentication or remote backend traffic.
+  if (
+    url.pathname.includes('/api/') ||
+    url.hostname.includes('googleapis.com') ||
+    url.hostname.includes('firebase') ||
+    url.hostname.includes('supabase.co')
+  ) return;
 
   if (request.mode === 'navigate') {
     event.respondWith(

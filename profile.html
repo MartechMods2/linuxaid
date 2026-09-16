@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="View your LinuxAid learning progress, achievements and preferences.">
+  <meta name="description" content="View your LinuxAid learning progress, achievements, sync status and preferences.">
   <title>LinuxAid | Profile</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,32 +24,28 @@
     <section class="product-hero" style="padding-bottom:32px">
       <div class="eyebrow">Your LinuxAid workspace</div>
       <h1>Progress you can actually see.</h1>
-      <p>Your profile combines simulator activity, lessons, labs, streaks and achievements. Browser-only progress works immediately; Firebase can sync profile details when configured.</p>
+      <p>Your profile combines terminal activity, lessons, labs, streaks and achievements. With the Supabase backend connected, the same learning state follows you across devices.</p>
     </section>
 
     <section class="section" style="padding-top:10px">
       <div class="profile-header">
         <div class="avatar-orb" id="profileAvatar">L</div>
-        <div><h2 id="profileName" style="margin:0 0 6px">LinuxAid Learner</h2><p id="profileIdentity" style="margin:0;color:var(--muted)">Browser profile</p></div>
+        <div>
+          <h2 id="profileName" style="margin:0 0 6px">LinuxAid Learner</h2>
+          <p id="profileIdentity" style="margin:0;color:var(--muted)">Browser profile</p>
+          <p id="syncStatus" style="margin:5px 0 0;color:var(--muted);font-size:.84rem">Local progress ready</p>
+        </div>
         <a class="button" href="auth.html" id="accountAction">Manage account</a>
       </div>
     </section>
 
-    <section class="section" style="padding-top:24px">
-      <div class="stat-grid" id="profileStats"></div>
-    </section>
+    <section class="section" style="padding-top:24px"><div class="stat-grid" id="profileStats"></div></section>
 
     <section class="section" style="padding-top:24px">
       <div class="product-layout">
         <div>
-          <div class="tool-panel">
-            <div class="section-title"><i class="fas fa-trophy"></i><span>Achievements</span></div>
-            <div id="achievementGrid" class="hero-badges"></div>
-          </div>
-          <div class="tool-panel" style="margin-top:18px">
-            <div class="section-title"><i class="fas fa-chart-simple"></i><span>Skill map</span></div>
-            <div id="skillMap"></div>
-          </div>
+          <div class="tool-panel"><div class="section-title"><i class="fas fa-trophy"></i><span>Achievements</span></div><div id="achievementGrid" class="hero-badges"></div></div>
+          <div class="tool-panel" style="margin-top:18px"><div class="section-title"><i class="fas fa-chart-simple"></i><span>Skill map</span></div><div id="skillMap"></div></div>
         </div>
         <aside class="product-sidebar">
           <div class="tool-panel">
@@ -57,13 +53,26 @@
             <form id="profileForm" class="auth-form-grid">
               <label class="form-label">Display name<input class="form-control" id="profileDisplayName" maxlength="80" placeholder="LinuxAid Learner"></label>
               <label class="form-label">Primary distro<select class="form-control" id="profileDistro"><option value="">Not selected</option><option>Ubuntu</option><option>Debian</option><option>Kali</option><option>Fedora</option><option>Arch</option><option>Linux Mint</option><option>RHEL</option></select></label>
-              <label class="form-label">Learning goal<textarea class="form-control" id="profileGoal" rows="3" maxlength="160" placeholder="e.g. Become comfortable managing a Linux server"></textarea></label>
+              <label class="form-label">Learning goal<textarea class="form-control" id="profileGoal" rows="3" maxlength="500" placeholder="e.g. Become comfortable managing a Linux server"></textarea></label>
               <button class="button primary" type="submit">Save preferences</button>
             </form>
+            <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--hairline)">
+              <label class="form-label">Profile picture<input class="form-control" id="avatarUpload" type="file" accept="image/png,image/jpeg,image/webp,image/gif"></label>
+              <small id="avatarStatus" style="color:var(--muted)">Supabase accounts can sync an avatar up to 2 MB.</small>
+            </div>
           </div>
+
+          <div class="tool-panel">
+            <h3>Privacy</h3>
+            <label style="display:flex;gap:10px;align-items:flex-start;color:var(--muted);line-height:1.5">
+              <input id="analyticsOptOut" type="checkbox" checked style="margin-top:4px">
+              <span>Allow anonymous product analytics. Session replay stays off unless you explicitly enable it in configuration.</span>
+            </label>
+          </div>
+
           <div class="tool-panel">
             <h3>Progress portability</h3>
-            <p style="color:var(--muted);line-height:1.7">Export your local progress as JSON before clearing a browser or moving machines.</p>
+            <p style="color:var(--muted);line-height:1.7">Cloud sync handles signed-in accounts. JSON export remains available as a personal backup.</p>
             <div style="display:grid;gap:10px"><button class="button" id="exportProgress" type="button">Export progress</button><label class="button" style="text-align:center;cursor:pointer">Import progress<input id="importProgress" type="file" accept="application/json" hidden></label><button class="button" id="resetProgress" type="button" style="color:var(--danger)">Reset local progress</button></div>
           </div>
         </aside>

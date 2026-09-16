@@ -125,13 +125,16 @@ export function readLearningState() {
   }
 }
 
-export function writeLearningState(state) {
+export function writeLearningState(state, { silent=false } = {}) {
   const normalized = {
     completedLessons:[...new Set(state.completedLessons || [])].slice(0,500),
     completedLabs:[...new Set(state.completedLabs || [])].slice(0,200),
-    quizScores:state.quizScores || {}
+    quizScores:state.quizScores && typeof state.quizScores === 'object' ? state.quizScores : {}
   };
   localStorage.setItem(LEARNING_STORAGE_KEY, JSON.stringify(normalized));
+  if (!silent && typeof document !== 'undefined') {
+    document.dispatchEvent(new CustomEvent('linuxaid:learning-changed',{ detail:{ learning:normalized } }));
+  }
   return normalized;
 }
 

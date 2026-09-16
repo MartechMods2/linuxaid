@@ -3,10 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Sign in or create a LinuxAid account to sync your Linux learning progress.">
+  <meta name="description" content="Sign in or create a LinuxAid account to sync Linux learning progress across devices.">
   <meta name="theme-color" content="#061018">
   <title>LinuxAid | Account</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
@@ -22,11 +23,11 @@
       <div>
         <div class="eyebrow">Your Linux learning identity</div>
         <h1>Build skills. Keep progress.</h1>
-        <p>Create a free LinuxAid account to keep your chat history, learner profile and progress ready across devices when Firebase is configured.</p>
+        <p>Create a free LinuxAid account to sync your profile, AI chat history, course progress and lab achievements across devices.</p>
         <div class="hero-badges" style="margin-top:24px">
-          <span class="badge-pill"><i class="fas fa-shield-halved"></i> Firebase-ready auth</span>
-          <span class="badge-pill"><i class="fas fa-cloud-arrow-up"></i> Progress sync</span>
-          <span class="badge-pill"><i class="fas fa-lock"></i> No AI keys in browser</span>
+          <span class="badge-pill"><i class="fas fa-shield-halved"></i> Supabase-first auth</span>
+          <span class="badge-pill"><i class="fas fa-cloud-arrow-up"></i> Cross-device sync</span>
+          <span class="badge-pill"><i class="fas fa-lock"></i> Row-level security</span>
         </div>
       </div>
     </section>
@@ -74,7 +75,7 @@
           <button class="button" id="demoMode" type="button">Continue in demo mode</button>
         </div>
 
-        <p style="margin:20px 0 0;color:var(--muted);font-size:.82rem;line-height:1.65">LinuxAid never stores your password itself. When Firebase is configured, authentication is handled by Firebase Authentication. In preview mode, no real account is created.</p>
+        <p style="margin:20px 0 0;color:var(--muted);font-size:.82rem;line-height:1.65">LinuxAid never stores your password itself. Authentication is handled by the connected backend provider. The recommended deployment uses Supabase Auth with email verification, password recovery, Google OAuth, database row-level security and optional browser-only demo mode.</p>
       </div>
     </section>
   </main>

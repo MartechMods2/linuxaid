@@ -1,3 +1,5 @@
+import { initBackend, getBackendStatus, invokeBackendFunction } from './backend.js';
+
 const SYSTEM_PROMPT = `You are LinuxAid, a beginner-friendly Linux tutor. Explain concepts step by step, prefer safe read-only inspection before system changes, clearly warn before privileged or destructive commands, distinguish distro-specific commands, and never pretend a simulated command changed a real machine.`;
 
 function aiConfig(config = {}) {
@@ -20,6 +22,20 @@ function readAnswer(result) {
     result?.candidates?.[0]?.content?.parts?.map(part => part?.text || '').join('') ||
     ''
   ).trim();
+}
+
+async function queryBackendFunction(prompt, config, history) {
+  await initBackend(config);
+  const status = getBackendStatus();
+  if (!status.ready || status.provider !== 'supabase') throw new Error('Supabase backend is not configured.');
+  const functionName = aiConfig(config).edgeFunction || 'linuxaid-ai';
+  const result = await invokeBackendFunction(functionName, {
+    prompt:String(prompt).slice(0,6000),
+    history:normalizeHistory(history)
+  });
+  const answer = readAnswer(result);
+  if (!answer) throw new Error('LinuxAid AI returned an empty answer.');
+  return answer;
 }
 
 async function queryProxy(prompt, config, history) {
@@ -89,6 +105,11 @@ async function queryGeminiDirect(prompt, config, history) {
 
 export function getAIStatus(config = {}) {
   const ai = aiConfig(config);
+  const backend = getBackendStatus();
+  const supabaseConfigured = Boolean(config.backend?.supabase?.url && (config.backend?.supabase?.publishableKey || config.backend?.supabase?.anonKey));
+  if ((backend.ready && backend.provider === 'supabase') || supabaseConfigured) {
+    return { ready:true, mode:'edge-function', provider:'supabase', function:ai.edgeFunction || 'linuxaid-ai' };
+  }
   if (ai.proxyUrl || config.aiProxyUrl) return { ready:true, mode:'proxy', provider:ai.provider || 'server' };
   if (ai.allowInsecureBrowserAI === true && (ai.openaiApiKey || config.openaiApiKey)) return { ready:true, mode:'browser-direct', provider:'openai', warning:'API key is exposed to the browser.' };
   if (ai.allowInsecureBrowserAI === true && (ai.geminiApiKey || config.geminiApiKey)) return { ready:true, mode:'browser-direct', provider:'gemini', warning:'API key is exposed to the browser.' };
@@ -97,13 +118,14 @@ export function getAIStatus(config = {}) {
 
 export async function queryAI(prompt, config = {}, history = []) {
   const ai = aiConfig(config);
+  const supabaseConfigured = Boolean(config.backend?.supabase?.url && (config.backend?.supabase?.publishableKey || config.backend?.supabase?.anonKey));
+  if (supabaseConfigured) return queryBackendFunction(prompt, config, history);
   if (ai.proxyUrl || config.aiProxyUrl) return queryProxy(prompt, config, history);
-  if (ai.allowInsecureBrowserAI !== true) throw new Error('AI proxy is not configured. Browser API keys are disabled for security.');
+  if (ai.allowInsecureBrowserAI !== true) throw new Error('Secure AI backend is not configured. Browser API keys are disabled.');
   const provider = String(ai.provider || 'gemini').toLowerCase();
   if (provider === 'openai') return queryOpenAIDirect(prompt, config, history);
   if (provider === 'gemini') return queryGeminiDirect(prompt, config, history);
   throw new Error(`Unsupported AI provider: ${provider}`);
 }
 
-// Backward-compatible export for older imports. New code should use queryAI.
 export const queryGemini = queryAI;
