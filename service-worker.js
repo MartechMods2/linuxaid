@@ -1,4 +1,4 @@
-const CACHE_NAME = 'linuxaid-v3';
+const CACHE_NAME = 'linuxaid-v4';
 const APP_SHELL = [
   './',
   './index.html',
@@ -9,7 +9,9 @@ const APP_SHELL = [
   './tools.html',
   './profile.html',
   './auth.html',
+  './community.html',
   './offline.html',
+  './404.html',
   './styles.css',
   './product.css',
   './app.js',
@@ -19,6 +21,8 @@ const APP_SHELL = [
   './favicon.svg',
   './manifest.webmanifest',
   './js/siteEnhancements.js',
+  './js/pageBasics.js',
+  './js/navExtras.js',
   './js/terminalEngine.js',
   './js/commandCatalog.js',
   './js/security.js',
@@ -28,7 +32,8 @@ const APP_SHELL = [
   './js/linuxTools.js',
   './js/toolsPage.js',
   './js/profilePage.js',
-  './js/authPage.js'
+  './js/authPage.js',
+  './js/communityPage.js'
 ];
 
 self.addEventListener('install', event => {
