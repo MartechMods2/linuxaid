@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Hands-on LinuxAid labs for permissions, files, services, networking and troubleshooting.">
+  <title>LinuxAid | Labs</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="product.css">
+  <script src="config.js"></script>
+</head>
+<body data-page="labs">
+  <header class="navbar">
+    <div class="brand"><div style="width:44px;height:44px;border-radius:18px;background:rgba(35,255,139,.15);display:grid;place-items:center;color:var(--green);font-weight:900">L</div><div><h1>LinuxAid</h1><div style="font-size:.82rem;color:var(--muted);margin-top:4px">Hands-on practice</div></div></div>
+    <nav class="nav-links"><a href="index.html">Home</a><a href="dashboard.html">Dashboard</a><a href="courses.html">Courses</a><a href="labs.html">Labs</a><a href="tools.html">Tools</a></nav>
+    <div class="cta-group"><a class="button" href="profile.html">Profile</a><a class="button primary" href="auth.html">Account</a><button class="button" id="themeToggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button></div>
+  </header>
+  <main class="site-shell" id="main-content">
+    <section class="product-hero">
+      <div class="eyebrow">LinuxAid Labs</div>
+      <h1>Learn by fixing things.</h1>
+      <p>Each lab gives you a realistic Linux situation, a safe simulated shell and a clear objective. LinuxAid checks the commands you used instead of asking you to memorize definitions.</p>
+      <div class="product-hero-actions"><a class="button primary" href="#labCatalog">Choose a lab</a><a class="button" href="courses.html">Review courses</a></div>
+    </section>
+
+    <section class="section" style="padding-top:20px"><div class="stat-grid" id="labStats"></div></section>
+
+    <section class="section" id="labCatalog" style="padding-top:34px">
+      <div class="section-title"><i class="fas fa-flask"></i><span>Practice challenges</span></div>
+      <h2>Scenarios, not flashcards</h2>
+      <p class="lead">Start with inspection. Make the smallest change. Verify the result. That is the LinuxAid lab method.</p>
+      <div class="lab-grid" id="labGrid"></div>
+    </section>
+
+    <section class="section" id="labWorkspace" hidden>
+      <div class="product-layout">
+        <div>
+          <div class="tool-panel" id="labBrief"></div>
+          <div class="lab-terminal" style="margin-top:18px">
+            <div class="lab-terminal-output" id="labTerminalOutput">LinuxAid Lab Terminal ready. Type help if you need command names.</div>
+            <form class="lab-terminal-input" id="labTerminalForm">
+              <span>linuxaid@lab:$</span>
+              <input id="labTerminalInput" type="text" autocomplete="off" spellcheck="false" aria-label="Lab terminal command" placeholder="Enter a command…">
+            </form>
+          </div>
+        </div>
+        <aside class="product-sidebar">
+          <div class="tool-panel"><div class="eyebrow">Objective</div><div id="labObjective"></div></div>
+          <div class="tool-panel"><h3>Need a hint?</h3><p id="labHint" style="color:var(--muted);line-height:1.7">Hints appear here without giving away the entire answer.</p><button class="button" id="showHint" type="button">Show next hint</button></div>
+          <button class="button primary" id="checkLab" type="button">Check my work</button>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section footer glass" style="margin-top:30px;padding:28px"><div class="footer-row"><div><h4>LinuxAid Labs</h4><p>Practice safe troubleshooting habits in a browser sandbox.</p></div><div><h4>Explore</h4><a href="courses.html">Courses</a><br><a href="tools.html">Tools</a><br><a href="dashboard.html#assistant">AI tutor</a></div><div><h4>Project</h4><a href="https://github.com/MartechMods2/linuxaid">GitHub repository</a></div></div></section>
+  </main>
+  <button class="back-to-top" id="backToTop"><i class="fas fa-arrow-up"></i></button>
+  <script type="module" src="js/learningPages.js"></script>
+</body>
+</html>
