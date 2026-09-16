@@ -1,13 +1,36 @@
 // Public runtime configuration for the static LinuxAid site.
-// Never place OpenAI/Gemini secret API keys in this browser-loaded file.
+// Supabase project URLs and publishable/anon keys are browser-safe identifiers.
+// Security is enforced with Row Level Security (RLS). Never put service_role,
+// OpenAI, Gemini, Resend or other secret server keys in this file.
 window.LINUXAID_CONFIG = {
-  firebase: null,
+  backendProvider: 'supabase',
+  backend: {
+    provider: 'supabase',
+    supabase: {
+      // Fill these from Supabase -> Project Settings -> API.
+      url: '',
+      publishableKey: '',
+      // `anonKey` remains supported for older Supabase projects.
+      anonKey: ''
+    },
+    // Optional fallback only. Leave null when Supabase is your backend.
+    firebase: null
+  },
   ai: {
-    // Point this to a deployed server-side proxy, e.g. https://your-api.example/api/ai
+    // With Supabase configured, LinuxAid automatically prefers the
+    // `linuxaid-ai` Edge Function. You can still override with a custom proxy.
     proxyUrl: '',
+    edgeFunction: 'linuxaid-ai',
     provider: 'server',
-    // Emergency development-only compatibility. Keep false in production.
     allowInsecureBrowserAI: false
+  },
+  analytics: {
+    provider: 'posthog',
+    // PostHog project API keys are intended for client-side SDK use.
+    posthogKey: '',
+    posthogHost: 'https://us.i.posthog.com',
+    sessionReplay: false,
+    respectDoNotTrack: true
   },
   product: {
     name: 'LinuxAid',
@@ -16,12 +39,14 @@ window.LINUXAID_CONFIG = {
   }
 };
 
-// Every current LinuxAid page already loads config.js in <head>. Use that stable
-// entry point to attach the shared product shell without duplicating script tags.
+// Backward compatibility for code that still reads `config.firebase` directly.
+window.LINUXAID_CONFIG.firebase = window.LINUXAID_CONFIG.backend.firebase;
+
 Promise.all([
   import('./js/siteEnhancements.js'),
   import('./js/pageBasics.js'),
-  import('./js/navExtras.js')
+  import('./js/navExtras.js'),
+  import('./js/analytics.js')
 ]).catch(error => {
   console.warn('LinuxAid shared product runtime could not be loaded:', error);
 });
