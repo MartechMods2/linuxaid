@@ -1,0 +1,25 @@
+{
+  "name": "LinuxAid — Learn Linux Without Fear",
+  "short_name": "LinuxAid",
+  "description": "AI-assisted Linux learning, safe terminal practice, labs, courses and troubleshooting tools.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#03070b",
+  "theme_color": "#061018",
+  "orientation": "any",
+  "categories": ["education", "developer", "utilities"],
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {"name":"Dashboard","short_name":"Dashboard","url":"./dashboard.html","icons":[{"src":"favicon.svg","sizes":"any","type":"image/svg+xml"}]},
+    {"name":"Linux Labs","short_name":"Labs","url":"./labs.html","icons":[{"src":"favicon.svg","sizes":"any","type":"image/svg+xml"}]},
+    {"name":"Linux Tools","short_name":"Tools","url":"./tools.html","icons":[{"src":"favicon.svg","sizes":"any","type":"image/svg+xml"}]}
+  ]
+}
