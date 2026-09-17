@@ -1,174 +1,125 @@
 # LinuxAid
 
-**LinuxAid** is a beginner-friendly Linux learning platform that combines structured courses, safe terminal practice, AI guidance, hands-on labs, troubleshooting tools, community learning and visible learner progress.
+**LinuxAid** is a practical Linux learning and community platform: safe terminal practice, troubleshooting playbooks, AI-assisted guidance, installation guides, social posts, profiles, direct messages, labs, tools and synced learner progress.
 
 🌐 **Live website:** https://martechmods2.github.io/linuxaid/
 
 📦 **Repository:** https://github.com/MartechMods2/linuxaid
 
-## What LinuxAid is becoming
+## Platform V8
 
-LinuxAid is no longer just a command list plus a fake terminal. The current product is organized around six ideas:
+The current architecture is no longer a demo-only frontend. LinuxAid now uses a live Supabase backend for authentication, social data, messages, notifications, progress and server-side AI requests.
 
-- **Learn** — structured Linux courses with short lessons and quizzes.
-- **Practice** — Terminal V2 with a stateful virtual filesystem and realistic commands.
-- **Ask** — AI-assisted Linux explanations through a secure server-side proxy, with a local tutor fallback.
-- **Labs** — scenario-based challenges for permissions, files, services, networking and troubleshooting.
-- **Tools** — deterministic command-risk, permission, distro and error-analysis utilities.
-- **Progress** — XP, command exploration, streaks, achievements, course progress and profile export/import.
+### Learn and practice
+
+- Stateful browser terminal for the core Linux command set.
+- **1,200+ real Linux/Unix/developer commands** indexed in Terminal V8 reference mode.
+- Safe debugging playbooks: `debug network`, `debug disk`, `debug service`, `debug permissions`, `debug process`, `debug boot`.
+- Searchable `commands.html` command library.
+- Linux fundamentals, labs, deterministic troubleshooting tools and progress tracking.
+- `install.html` guide for PC installs, WSL, VMs, Android/Termux, Mac, ChromeOS, ARM boards and mobile limitations.
+
+Terminal V8 does not pretend that a browser changed a real computer. Core commands run against the simulated filesystem; broader or high-impact commands are recognized and explained in reference mode.
+
+### Live community
+
+- Public community posts and replies.
+- Post types, distro context, tags and optional command/code snippets.
+- Reactions and saved posts.
+- Follow graph and People discovery.
+- Rich public profiles with experience level, skills, shell/editor preference, availability and collaboration interests.
+- Direct conversations with live message updates, edit/delete support and unread state.
+- Realtime notifications.
+- Reports, block-aware database policies and database-enforced social rate limits.
+
+### AI
+
+The browser calls the authenticated `linuxaid-ai` Supabase Edge Function. Provider secrets never belong in frontend JavaScript.
+
+Supported server-side providers:
+
+- NVIDIA NIM / API Catalog — recommended hosted option.
+- Gemini.
+- OpenAI.
+
+The default NVIDIA model configured by the function is `nvidia/nemotron-3.5-lightning-30b-a3b`, and the model remains configurable through Edge Function secrets.
+
+See **[AI_SETUP.md](AI_SETUP.md)** for the exact place to add your NVIDIA API key.
+
+### Security
+
+LinuxAid currently uses:
+
+- Supabase Auth with PKCE.
+- RLS on exposed user/social data.
+- private helper functions for authorization logic.
+- database validation on posts, replies, messages and profiles.
+- database-enforced post/reply/message rate limits.
+- conversation-membership and block checks for messages.
+- signed-in verification and daily quotas for remote AI.
+- AI origin allowlist, input limits and upstream request timeouts.
+- pinned Supabase browser/Edge Function SDK version.
+- 45-minute frontend inactivity lock and 12-hour local session ceiling.
+- catastrophic-command detection in the terminal simulator.
+- escaped user-generated content before HTML rendering.
+
+**Owner action still recommended:** enable Supabase Auth leaked-password protection in the dashboard.
 
 ## Main pages
 
 | Page | Purpose |
 | --- | --- |
-| `index.html` | Marketing / landing page |
-| `dashboard.html` | AI tutor, command explorer, Terminal V2 and roadmap |
-| `linux.html` | Linux fundamentals guide |
-| `courses.html` | Structured learning tracks and quizzes |
-| `labs.html` | Hands-on scenario labs |
-| `tools.html` | Command analyzer, permission decoder, distro converter and error interpreter |
-| `community.html` | Firebase-ready learner discussions |
-| `profile.html` | Progress, achievements, preferences and data portability |
-| `auth.html` | Firebase-ready sign in, sign up and password reset |
-| `offline.html` | PWA offline fallback |
-| `404.html` | GitHub Pages not-found experience |
-
-## Current highlights
-
-### Terminal Simulator V2
-
-The browser simulator has a stateful virtual filesystem and supports realistic learning workflows including:
-
-- `pwd`, `ls`, `cd`, `mkdir`, `touch`, `cat`
-- `cp`, `mv`, `rm`
-- `head`, `tail`, `grep`, `find`
-- `chmod`, `stat`, `du`, `df`, `free`, `ps`
-- `ping`, `ip`, `ss`
-- package-manager simulations
-- `systemctl`, `journalctl`
-- `man`, `history`, autocomplete and command history
-- safe output redirection
-
-Destructive command patterns are blocked instead of simulated.
-
-### Command Safety Engine
-
-LinuxAid classifies commands as **safe**, **medium**, **high** or **extreme** risk and explains why. The Tools page also works without remote AI, which keeps core safety guidance fast and available offline.
-
-### Courses and labs
-
-Current learning tracks include:
-
-- Linux Foundations
-- Linux Administration
-- Linux Networking
-- Bash & Automation
-
-Hands-on labs cover permission errors, file finding, disk checks, service debugging, network triage, log searching, safe backups and project archives.
-
-### Authentication
-
-LinuxAid has a Firebase-ready account flow with:
-
-- Google sign-in
-- Email/password sign-in
-- Account creation
-- Email verification request
-- Password reset
-- Browser-only demo mode when Firebase is not configured
-- Profile persistence scaffolding
-
-LinuxAid never stores user passwords itself.
-
-### PWA / offline readiness
-
-The project includes:
-
-- `manifest.webmanifest`
-- `service-worker.js`
-- cached learning pages and tools
-- offline fallback page
-- install prompt support
-- online/offline status indicator
-
-Remote AI, Firebase writes and community sync still require a network connection.
-
-## Product experience upgrades
-
-The shared product shell adds:
-
-- responsive mobile navigation
-- animated first-session boot intro
-- scroll reveal animations
-- page transitions
-- scroll progress bar
-- keyboard-accessible focus states
-- Ctrl/Cmd + K command palette
-- dark/light theme continuity
-- installable PWA prompt
-- branded 404/offline experiences
-- reduced-motion support
+| `index.html` | Landing page |
+| `dashboard.html` | LinuxAid workspace and AI tutor |
+| `labs.html` | Hands-on troubleshooting scenarios |
+| `tools.html` | Deterministic Linux analysis tools |
+| `commands.html` | Search 1,200+ command names |
+| `install.html` | PC/mobile Linux installation centre |
+| `community.html` | Live social feed |
+| `people.html` | Discover/follow/message members |
+| `messages.html` | Direct messages |
+| `rankings.html` | Learner rankings |
+| `profile.html` | Learning + public social profile |
+| `support.html` | Configurable Buy Me a Coffee / support page |
+| `privacy.html` | Privacy information |
+| `security.html` | Security posture |
+| `acceptable-use.html` | Community/platform acceptable use |
+| `terms.html` | Terms |
 
 ## Architecture
 
 ```text
-Browser
-├── Static LinuxAid UI
-├── Terminal V2
-├── Courses / Labs / Tools
-├── Local progress + PWA cache
-├── Firebase Auth / Firestore (optional)
-└── Secure AI proxy (recommended)
-        ├── Gemini
-        └── OpenAI
+Browser / GitHub Pages
+├── Platform V8 responsive shell
+├── Terminal V8 + 1,200+ command catalog
+├── Labs / tools / install guides
+├── Supabase Auth
+├── Supabase Data API + RLS
+├── Supabase Realtime (posts / replies / messages / notifications)
+└── Authenticated Supabase Edge Function
+    ├── NVIDIA NIM
+    ├── Gemini
+    └── OpenAI
 ```
 
-Provider secret keys must stay on the server. The browser should only know the AI proxy URL.
+## Backend
 
-## Project structure
+Connected Supabase project ref:
 
 ```text
-.
-├── api/
-│   └── ai.js
-├── js/
-│   ├── authPage.js
-│   ├── commandCatalog.js
-│   ├── communityPage.js
-│   ├── learningData.js
-│   ├── learningPages.js
-│   ├── linuxTools.js
-│   ├── navExtras.js
-│   ├── pageBasics.js
-│   ├── profilePage.js
-│   ├── progress.js
-│   ├── security.js
-│   ├── siteEnhancements.js
-│   ├── terminalEngine.js
-│   └── toolsPage.js
-├── tests/
-├── app.js
-├── config.js
-├── firebase.js
-├── firestore.rules
-├── gemini.js
-├── product.css
-├── styles.css
-├── manifest.webmanifest
-├── service-worker.js
-└── DEPLOYMENT.md
+qkpamdanjnxniwdinodi
 ```
 
-## Local development
+`config.js` contains only the public project URL and publishable key. Never add service-role/secret keys or AI provider keys to that file.
 
-LinuxAid currently stays deliberately lightweight.
+The production database currently has live v6/v7 migrations that predate Platform V8 and are ahead of the historical migration files committed in GitHub. Treat migration parity as release work before using this repository to bootstrap a second Supabase project from scratch.
+
+## Local development
 
 Requirements:
 
 - Node.js 22+
-- a simple local static server
-
-Install/check:
+- a local HTTP server
 
 ```bash
 npm install
@@ -176,84 +127,58 @@ npm run check
 npm test
 ```
 
-Then serve the repository with any local web server rather than opening pages through `file://`, because modules, service workers and Firebase work best over HTTP.
+Serve the repository over HTTP rather than opening files with `file://` so ES modules, service workers and auth callbacks behave normally.
 
-## Firebase setup
+## NVIDIA setup
 
-Copy the Firebase Web App public configuration into the `firebase` section of `config.js` (or generate the file in your deployment process):
+1. Create a key for a hosted model in NVIDIA's API Catalog.
+2. Open the LinuxAid Supabase project.
+3. Go to **Edge Functions → Secrets**.
+4. Add `NVIDIA_API_KEY` plus the variables documented in [AI_SETUP.md](AI_SETUP.md).
+5. Keep `AI_PROVIDER=nvidia` to select NVIDIA explicitly.
+
+No NVIDIA secret is required in `config.js`.
+
+## Support link setup
+
+`support.html` is ready, but the payment destination is intentionally not guessed. Add your real public support URL here:
 
 ```js
-window.LINUXAID_CONFIG = {
-  firebase: {
-    apiKey: 'PUBLIC_FIREBASE_WEB_API_KEY',
-    authDomain: 'your-project.firebaseapp.com',
-    projectId: 'your-project',
-    storageBucket: 'your-project.appspot.com',
-    messagingSenderId: '...',
-    appId: '...'
-  },
-  ai: {
-    proxyUrl: 'https://your-api-host.example/api/ai',
-    provider: 'server',
-    allowInsecureBrowserAI: false
-  }
-};
+// config.js
+product: {
+  supportUrl: 'https://www.buymeacoffee.com/YOUR_HANDLE'
+}
 ```
 
-Enable Email/Password and Google providers in Firebase Authentication and deploy `firestore.rules` before public use.
+A Ko-fi or other legitimate public support URL can be used instead.
 
-See **[DEPLOYMENT.md](DEPLOYMENT.md)** for the complete checklist.
+## Testing / CI
 
-## AI configuration
+CI runs JavaScript/module checks and Node tests. Platform V8 adds regression coverage for:
 
-LinuxAid uses a **proxy-first** AI architecture.
+- 1,200+ terminal command indexing.
+- phone breakpoints, safe-area handling and 44px touch targets.
+- NVIDIA proxy support without a hard-coded key.
+- frontend session timeouts.
+- richer social/profile fields.
+- installation, command and support entry points.
 
-`api/ai.js` is a server-side proxy template that can call Gemini or OpenAI using server environment variables. Do not put provider API secrets inside `config.js`, HTML or browser JavaScript.
+CodeQL remains enabled in GitHub Actions.
 
-If no remote AI proxy is configured, the dashboard still provides a limited local Linux tutor fallback.
+## Release checklist
 
-## Security principles
+Before merging a production release:
 
-LinuxAid follows these rules:
-
-1. Escape chat output before limited Markdown rendering.
-2. Never expose AI provider secret keys in the browser.
-3. Treat Firebase client config as public identifiers and enforce privacy through Firestore rules.
-4. Block catastrophic terminal patterns in the simulator.
-5. Prefer inspect → change → verify troubleshooting.
-6. Do not present mock analytics as real production data.
-7. Keep CI and CodeQL green before merging production changes.
-
-## Testing and CI
-
-GitHub Actions runs:
-
-- JavaScript syntax checks
-- Node unit tests
-- terminal regression tests
-- security rendering tests
-- progress tests
-- Linux tools tests
-- CodeQL analysis
-
-The main branch also triggers GitHub Pages deployment.
-
-## Roadmap
-
-High-value future work includes:
-
-- server-synced course/lab progress
-- richer lesson authoring
-- community replies, voting and moderation
-- email verification gating
-- Firebase App Check
-- real admin analytics with role protection
-- ShellCheck integration
-- screenshot/error analysis
-- distro-specific lesson modes
-- certificates with verification IDs
-- accessibility audits and Lighthouse CI
-- optional paid/hosted tiers without weakening the free learning experience
+1. `npm run check`
+2. `npm test`
+3. review GitHub Actions + CodeQL
+4. inspect Supabase Security Advisor
+5. inspect Supabase Performance Advisor
+6. test account/auth flows on desktop and phone
+7. test community create/reply/react/save/follow/message/realtime flows
+8. verify NVIDIA/Gemini/OpenAI Edge Function secrets without exposing values
+9. verify PWA/service-worker navigation for newly added pages
+10. confirm the configured support URL belongs to the project owner
 
 ## License
 
