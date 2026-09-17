@@ -1,131 +1,30 @@
-import { initBackend, getBackendStatus, invokeBackendFunction } from './backend.js';
+import {initBackend,getBackendStatus,invokeBackendFunction} from './backend.js';
+import {COMMAND_CATALOG} from './js/commandCatalog.js';
+import {analyzeLinuxCommand,interpretLinuxError} from './js/linuxTools.js';
 
-const SYSTEM_PROMPT = `You are LinuxAid, a beginner-friendly Linux tutor. Explain concepts step by step, prefer safe read-only inspection before system changes, clearly warn before privileged or destructive commands, distinguish distro-specific commands, and never pretend a simulated command changed a real machine.`;
+const SYSTEM_PROMPT=`You are LinuxAid, a beginner-friendly Linux tutor. Explain concepts step by step, prefer safe read-only inspection before system changes, clearly warn before privileged or destructive commands, distinguish distro-specific commands, and never pretend a simulated command changed a real machine.`;
+const aiConfig=(config={})=>config.ai||{};
+const normalizeHistory=(history=[])=>(Array.isArray(history)?history:[]).filter(i=>i&&['user','assistant'].includes(i.role)&&i.text).slice(-10).map(i=>({role:i.role,content:String(i.text).slice(0,4000)}));
+const readAnswer=result=>String(result?.answer||result?.output_text||result?.choices?.[0]?.message?.content||result?.choices?.[0]?.text||result?.candidates?.[0]?.content?.parts?.map(p=>p?.text||'').join('')||'').trim();
 
-function aiConfig(config = {}) {
-  return config.ai || {};
+async function queryBackendFunction(prompt,config,history){await initBackend(config);const status=getBackendStatus();if(!status.ready||status.provider!=='supabase')throw new Error('Supabase backend is not configured.');const result=await invokeBackendFunction(aiConfig(config).edgeFunction||'linuxaid-ai',{prompt:String(prompt).slice(0,6000),history:normalizeHistory(history)});const answer=readAnswer(result);if(!answer)throw new Error('LinuxAid AI returned an empty answer.');return answer;}
+async function queryProxy(prompt,config,history){const proxyUrl=aiConfig(config).proxyUrl||config.aiProxyUrl;if(!proxyUrl)throw new Error('LinuxAid AI proxy is not configured.');const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),Number(aiConfig(config).requestTimeoutMs||25000));try{const response=await fetch(proxyUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:String(prompt).slice(0,6000),history:normalizeHistory(history)}),signal:controller.signal});const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result?.error?.message||result?.error||`AI proxy request failed (${response.status}).`);const answer=readAnswer(result);if(!answer)throw new Error('AI proxy returned an empty answer.');return answer;}finally{clearTimeout(timeout);}}
+
+function commandToken(text){const cleaned=String(text||'').replace(/[`$]/g,' ').trim();const match=cleaned.match(/(?:^|\s)([a-zA-Z0-9_.+-]{2,})(?:\s|$)/g)||[];const names=new Set(COMMAND_CATALOG.map(c=>c.name));for(const raw of match){const token=raw.trim().toLowerCase();if(names.has(token))return token;}return'';}
+function localTutor(prompt){const text=String(prompt||'').trim();const lower=text.toLowerCase();const prefix='**Local LinuxAid guide** — remote AI is unavailable, so this answer uses LinuxAid’s built-in Linux knowledge.\n\n';
+  if(!text)return prefix+'Ask about a Linux command, error, permission, service, network problem or package workflow.';
+  const error=interpretLinuxError(text);if(error.title!=='Unrecognized error pattern'&&error.title!=='No error entered')return prefix+`### ${error.title}\n${error.cause}\n\n**Check first**\n${error.checks.map(c=>`- \`${c}\``).join('\n')}\n\n**Safer next step**\n${error.fix}`;
+  const token=commandToken(text);const cmd=COMMAND_CATALOG.find(c=>c.name===token);
+  if(cmd){const risk=analyzeLinuxCommand(cmd.examples?.[0]||cmd.syntax||cmd.name);return prefix+`### \`${cmd.name}\`\n${cmd.explanation}\n\n**Syntax:** \`${cmd.syntax}\`\n${cmd.examples?.length?`\n**Examples**\n${cmd.examples.slice(0,3).map(x=>`- \`${x}\``).join('\n')}`:''}\n\n**Safety:** ${risk.title}. ${risk.summary}${cmd.related?.length?`\n\nRelated: ${cmd.related.slice(0,6).map(x=>`\`${x}\``).join(', ')}`:''}`;}
+  if(/permission|chmod|chown|owner|group/.test(lower))return prefix+'For permission problems, inspect before changing anything:\n\n- `id` — confirm the current user and groups\n- `ls -l <path>` — inspect owner/group/mode\n- `namei -l <path>` — inspect every directory in a path\n\nAvoid jumping straight to `chmod 777` or `sudo`. Use the smallest permission change that actually solves the problem.';
+  if(/network|dns|internet|connection|port/.test(lower))return prefix+'A safe network troubleshooting order is:\n\n1. `ip addr` — interface/address\n2. `ip route` — default route\n3. `ping -c 2 1.1.1.1` — basic IP reachability\n4. `getent hosts example.com` — DNS\n5. `ss -tulpn` — listening ports\n\nThis separates link/routing problems from DNS and service problems.';
+  if(/service|systemctl|journal|daemon/.test(lower))return prefix+'Start with read-only service inspection:\n\n- `systemctl status <service>`\n- `journalctl -u <service> --since today`\n- `ss -tulpn` if the service should listen on a port\n\nUnderstand the failure before restarting or changing configuration.';
+  if(/apt|dnf|pacman|package|install/.test(lower))return prefix+'First identify the distro with `cat /etc/os-release`. Debian/Ubuntu normally use `apt`, Fedora/RHEL use `dnf`, and Arch uses `pacman`. Search/inspect before adding third-party repositories or piping downloads into a shell.';
+  return prefix+'I can still help locally with Linux commands, permissions, services, networking, package managers and common terminal errors. Include your distro, the command you ran, the exact output/error and what you expected to happen for a more useful answer.';
 }
 
-function normalizeHistory(history = []) {
-  return (Array.isArray(history) ? history : [])
-    .filter(item => item && ['user','assistant'].includes(item.role) && item.text)
-    .slice(-10)
-    .map(item => ({ role:item.role, content:String(item.text).slice(0,4000) }));
-}
+export function getAIStatus(config={}){const ai=aiConfig(config),backend=getBackendStatus();const supabaseConfigured=Boolean(config.backend?.supabase?.url&&(config.backend?.supabase?.publishableKey||config.backend?.supabase?.anonKey));if((backend.ready&&backend.provider==='supabase')||supabaseConfigured)return{ready:true,mode:'edge-function-with-local-fallback',provider:'supabase',function:ai.edgeFunction||'linuxaid-ai'};if(ai.proxyUrl||config.aiProxyUrl)return{ready:true,mode:'proxy-with-local-fallback',provider:ai.provider||'server'};return{ready:true,mode:'local',provider:'local'};}
 
-function readAnswer(result) {
-  return String(
-    result?.answer ||
-    result?.output_text ||
-    result?.choices?.[0]?.message?.content ||
-    result?.choices?.[0]?.text ||
-    result?.candidates?.[0]?.content?.parts?.map(part => part?.text || '').join('') ||
-    ''
-  ).trim();
-}
-
-async function queryBackendFunction(prompt, config, history) {
-  await initBackend(config);
-  const status = getBackendStatus();
-  if (!status.ready || status.provider !== 'supabase') throw new Error('Supabase backend is not configured.');
-  const functionName = aiConfig(config).edgeFunction || 'linuxaid-ai';
-  const result = await invokeBackendFunction(functionName, {
-    prompt:String(prompt).slice(0,6000),
-    history:normalizeHistory(history)
-  });
-  const answer = readAnswer(result);
-  if (!answer) throw new Error('LinuxAid AI returned an empty answer.');
-  return answer;
-}
-
-async function queryProxy(prompt, config, history) {
-  const proxyUrl = aiConfig(config).proxyUrl || config.aiProxyUrl;
-  if (!proxyUrl) throw new Error('LinuxAid AI proxy is not configured.');
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 25000);
-  try {
-    const response = await fetch(proxyUrl, {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body:JSON.stringify({ prompt:String(prompt).slice(0,6000), history:normalizeHistory(history) }),
-      signal:controller.signal
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result?.error?.message || result?.error || `AI proxy request failed (${response.status}).`);
-    const answer = readAnswer(result);
-    if (!answer) throw new Error('AI proxy returned an empty answer.');
-    return answer;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-async function queryOpenAIDirect(prompt, config, history) {
-  const ai = aiConfig(config);
-  const apiKey = ai.openaiApiKey || config.openaiApiKey;
-  if (!apiKey) throw new Error('OpenAI API key is not configured.');
-  const response = await fetch(ai.openaiApiUrl || 'https://api.openai.com/v1/chat/completions', {
-    method:'POST',
-    headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${apiKey}` },
-    body:JSON.stringify({
-      model:ai.openaiModel || 'gpt-4.1-mini',
-      messages:[{ role:'system', content:SYSTEM_PROMPT }, ...normalizeHistory(history), { role:'user', content:String(prompt).slice(0,6000) }],
-      temperature:0.35,
-      max_tokens:700
-    })
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result?.error?.message || 'OpenAI request failed.');
-  const answer = readAnswer(result);
-  if (!answer) throw new Error('OpenAI returned an empty answer.');
-  return answer;
-}
-
-async function queryGeminiDirect(prompt, config, history) {
-  const ai = aiConfig(config);
-  const apiKey = ai.geminiApiKey || config.geminiApiKey;
-  if (!apiKey) throw new Error('Gemini API key is not configured.');
-  const model = ai.geminiModel || 'gemini-2.5-flash';
-  const endpoint = ai.geminiApiUrl || `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
-  const contents = [
-    ...normalizeHistory(history).map(item => ({ role:item.role === 'assistant' ? 'model' : 'user', parts:[{ text:item.content }] })),
-    { role:'user', parts:[{ text:String(prompt).slice(0,6000) }] }
-  ];
-  const response = await fetch(endpoint, {
-    method:'POST',
-    headers:{ 'Content-Type':'application/json' },
-    body:JSON.stringify({ systemInstruction:{ parts:[{ text:SYSTEM_PROMPT }] }, contents, generationConfig:{ temperature:0.35, maxOutputTokens:700 } })
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result?.error?.message || 'Gemini request failed.');
-  const answer = readAnswer(result);
-  if (!answer) throw new Error('Gemini returned an empty answer.');
-  return answer;
-}
-
-export function getAIStatus(config = {}) {
-  const ai = aiConfig(config);
-  const backend = getBackendStatus();
-  const supabaseConfigured = Boolean(config.backend?.supabase?.url && (config.backend?.supabase?.publishableKey || config.backend?.supabase?.anonKey));
-  if ((backend.ready && backend.provider === 'supabase') || supabaseConfigured) {
-    return { ready:true, mode:'edge-function', provider:'supabase', function:ai.edgeFunction || 'linuxaid-ai' };
-  }
-  if (ai.proxyUrl || config.aiProxyUrl) return { ready:true, mode:'proxy', provider:ai.provider || 'server' };
-  if (ai.allowInsecureBrowserAI === true && (ai.openaiApiKey || config.openaiApiKey)) return { ready:true, mode:'browser-direct', provider:'openai', warning:'API key is exposed to the browser.' };
-  if (ai.allowInsecureBrowserAI === true && (ai.geminiApiKey || config.geminiApiKey)) return { ready:true, mode:'browser-direct', provider:'gemini', warning:'API key is exposed to the browser.' };
-  return { ready:false, mode:'local-fallback', provider:'local' };
-}
-
-export async function queryAI(prompt, config = {}, history = []) {
-  const ai = aiConfig(config);
-  const supabaseConfigured = Boolean(config.backend?.supabase?.url && (config.backend?.supabase?.publishableKey || config.backend?.supabase?.anonKey));
-  if (supabaseConfigured) return queryBackendFunction(prompt, config, history);
-  if (ai.proxyUrl || config.aiProxyUrl) return queryProxy(prompt, config, history);
-  if (ai.allowInsecureBrowserAI !== true) throw new Error('Secure AI backend is not configured. Browser API keys are disabled.');
-  const provider = String(ai.provider || 'gemini').toLowerCase();
-  if (provider === 'openai') return queryOpenAIDirect(prompt, config, history);
-  if (provider === 'gemini') return queryGeminiDirect(prompt, config, history);
-  throw new Error(`Unsupported AI provider: ${provider}`);
-}
-
-export const queryGemini = queryAI;
+export async function queryAI(prompt,config={},history=[]){const ai=aiConfig(config);const supabaseConfigured=Boolean(config.backend?.supabase?.url&&(config.backend?.supabase?.publishableKey||config.backend?.supabase?.anonKey));if(supabaseConfigured){try{return await queryBackendFunction(prompt,config,history);}catch(error){console.warn('LinuxAid remote tutor unavailable; using local guidance:',error?.message||error);return localTutor(prompt);}}if(ai.proxyUrl||config.aiProxyUrl){try{return await queryProxy(prompt,config,history);}catch(error){console.warn('LinuxAid AI proxy unavailable; using local guidance:',error?.message||error);return localTutor(prompt);}}return localTutor(prompt);}
+export const queryGemini=queryAI;
+export {localTutor};
