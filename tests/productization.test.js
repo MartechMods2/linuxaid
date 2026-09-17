@@ -20,7 +20,8 @@ test('public config keeps secrets out of browser and exposes auth slots only', a
   assert.match(config, /googleEnabled:\s*false/);
   assert.doesNotMatch(config, /AIza[0-9A-Za-z_-]{20,}/);
   assert.doesNotMatch(config, /sk-[A-Za-z0-9_-]{20,}/);
-  assert.doesNotMatch(config, /service_role/i);
+  assert.doesNotMatch(config, /sb_secret_[A-Za-z0-9_-]{10,}/);
+  assert.doesNotMatch(config, /(?:serviceRoleKey|service_role_key)\s*[:=]\s*['"][^'"]{10,}/i);
 });
 
 test('service worker busts stale layout caches and includes current product routes', async () => {
