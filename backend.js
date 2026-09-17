@@ -1,369 +1,71 @@
-const state = {
-  provider:'none',
-  ready:false,
-  client:null,
-  config:null,
-  initPromise:null,
-  authSubscriptions:new Set(),
-  lastUser:null
-};
+const state={provider:'none',ready:false,client:null,config:null,initPromise:null,authSubscriptions:new Set(),lastUser:null};
 
-const normalizeUser = user => {
-  if (!user) return null;
-  const metadata = user.user_metadata || {};
-  return {
-    uid:user.id,
-    id:user.id,
-    email:user.email || '',
-    displayName:metadata.full_name || metadata.name || metadata.display_name || '',
-    emailVerified:Boolean(user.email_confirmed_at),
-    avatarUrl:metadata.avatar_url || '',
-    raw:user
-  };
-};
+const normalizeUser=user=>{if(!user)return null;const m=user.user_metadata||{};return{uid:user.id,id:user.id,email:user.email||'',displayName:m.full_name||m.name||m.display_name||'',emailVerified:Boolean(user.email_confirmed_at),avatarUrl:m.avatar_url||'',raw:user};};
+const backendConfig=(config={})=>config.backend||config;
+const supabaseConfig=(config={})=>backendConfig(config).supabase||config.supabase||{};
+const hasSupabase=(config={})=>{const s=supabaseConfig(config);return Boolean(s.url&&(s.publishableKey||s.anonKey));};
+function notifyAuth(user){state.lastUser=normalizeUser(user);state.authSubscriptions.forEach(cb=>{try{cb(state.lastUser);}catch(e){console.error('LinuxAid auth listener failed:',e);}});}
+function timeoutFetch(timeoutMs=20000){return async(input,init={})=>{const c=new AbortController();const timer=setTimeout(()=>c.abort(),timeoutMs);try{return await fetch(input,{...init,signal:init.signal||c.signal});}finally{clearTimeout(timer);}};}
+async function initSupabase(config){const s=supabaseConfig(config);const{createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');const timeoutMs=Math.max(8000,Math.min(45000,Number(config.security?.requestTimeoutMs||20000)));state.client=createClient(s.url,s.publishableKey||s.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'pkce'},global:{fetch:timeoutFetch(timeoutMs),headers:{'X-Client-Info':'linuxaid-web-v6'}}});state.provider='supabase';state.ready=true;const{data,error}=await state.client.auth.getSession();if(error)console.warn('LinuxAid Supabase session restore failed:',error);notifyAuth(data?.session?.user||null);state.client.auth.onAuthStateChange((_event,session)=>notifyAuth(session?.user||null));return true;}
 
-function backendConfig(config = {}) { return config.backend || config; }
-function supabaseConfig(config = {}) { return backendConfig(config).supabase || config.supabase || {}; }
-function hasSupabase(config = {}) {
-  const source = supabaseConfig(config);
-  return Boolean(source.url && (source.publishableKey || source.anonKey));
-}
+export async function initBackend(config=window.LINUXAID_CONFIG||{}){if(state.ready)return state.provider;if(state.initPromise)return state.initPromise;state.config=config;state.initPromise=(async()=>{try{if(!hasSupabase(config))return'none';await initSupabase(config);return state.provider;}catch(error){console.error('LinuxAid backend initialization failed:',error);state.provider='none';state.ready=false;state.client=null;return'none';}})();try{return await state.initPromise;}finally{state.initPromise=null;}}
+export function getBackendStatus(){return{provider:state.provider,ready:state.ready,user:state.lastUser};}
+export function getBackendClient(){return state.client;}
+export function onAuthStateChangedListener(callback){if(typeof callback!=='function')return()=>{};state.authSubscriptions.add(callback);queueMicrotask(()=>callback(state.lastUser));return()=>state.authSubscriptions.delete(callback);}
+export async function getCurrentUser(){if(!state.ready||!state.client)return null;const{data,error}=await state.client.auth.getUser();if(error&&error.status!==401)throw error;notifyAuth(data?.user||null);return state.lastUser;}
+export async function signInWithGoogleClient(){if(!state.ready)throw new Error('LinuxAid backend is not configured.');const redirectTo=new URL('dashboard.html',location.href).href;const{data,error}=await state.client.auth.signInWithOAuth({provider:'google',options:{redirectTo,queryParams:{access_type:'offline',prompt:'consent'}}});if(error)throw error;return data;}
+export async function signInWithEmailClient(email,password,captchaToken=''){if(!state.ready)throw new Error('LinuxAid backend is not configured.');const payload={email,password};if(captchaToken)payload.options={captchaToken};const{data,error}=await state.client.auth.signInWithPassword(payload);if(error)throw error;notifyAuth(data.user);return state.lastUser;}
+export async function createAccountWithEmailClient(email,password,displayName='LinuxAid Learner',captchaToken=''){if(!state.ready)throw new Error('LinuxAid backend is not configured.');const emailRedirectTo=new URL('auth.html?verified=1',location.href).href;const options={data:{display_name:displayName},emailRedirectTo};if(captchaToken)options.captchaToken=captchaToken;const{data,error}=await state.client.auth.signUp({email,password,options});if(error)throw error;notifyAuth(data.session?.user||null);return normalizeUser(data.user);}
+export async function sendPasswordResetClient(email,captchaToken=''){if(!state.ready)throw new Error('LinuxAid backend is not configured.');const redirectTo=new URL('auth.html?mode=recovery',location.href).href;const options={redirectTo};if(captchaToken)options.captchaToken=captchaToken;const{error}=await state.client.auth.resetPasswordForEmail(email,options);if(error)throw error;return true;}
+export async function updatePasswordClient(password){if(!state.ready)throw new Error('LinuxAid backend is not configured.');const{data,error}=await state.client.auth.updateUser({password});if(error)throw error;notifyAuth(data.user);return state.lastUser;}
+export async function sendEmailVerificationClient(){if(!state.ready)throw new Error('LinuxAid backend is not configured.');const user=await getCurrentUser();if(!user?.email)throw new Error('No signed-in email account.');const emailRedirectTo=new URL('auth.html?verified=1',location.href).href;const{error}=await state.client.auth.resend({type:'signup',email:user.email,options:{emailRedirectTo}});if(error)throw error;return true;}
+export async function signOutClient(){if(!state.ready)return;const{error}=await state.client.auth.signOut();if(error)throw error;notifyAuth(null);}
+export async function getAuthHeaders(){if(!state.ready)return{};const{data}=await state.client.auth.getSession();const token=data?.session?.access_token;return token?{Authorization:`Bearer ${token}`}:{}};
+function requireUserId(){const id=state.lastUser?.uid;if(!id)throw new Error('Sign in to use this feature.');return id;}
 
-function notifyAuth(user) {
-  state.lastUser = normalizeUser(user);
-  state.authSubscriptions.forEach(callback => {
-    try { callback(state.lastUser); }
-    catch (error) { console.error('LinuxAid auth listener failed:', error); }
-  });
-}
+export async function loadUserChatHistory(uid=state.lastUser?.uid){if(!state.ready||!uid)return[];const{data,error}=await state.client.from('learner_state').select('chat_history').eq('user_id',uid).maybeSingle();if(error)throw error;return Array.isArray(data?.chat_history)?data.chat_history:[];}
+export async function saveUserChatHistory(uid=state.lastUser?.uid,messages=[]){if(!state.ready||!uid)return;const safe=(Array.isArray(messages)?messages:[]).slice(-60).map(i=>({role:i.role==='user'?'user':'assistant',text:String(i.text||'').slice(0,12000)}));const{error}=await state.client.from('learner_state').upsert({user_id:uid,chat_history:safe,updated_at:new Date().toISOString()},{onConflict:'user_id'});if(error)throw error;}
 
-function timeoutFetch(timeoutMs = 20000) {
-  return async (input, init = {}) => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      return await fetch(input, { ...init, signal:init.signal || controller.signal });
-    } finally {
-      clearTimeout(timer);
-    }
-  };
-}
+function mapProfile(data){if(!data)return null;return{id:data.id,displayName:data.display_name||'',username:data.username||'',headline:data.headline||'',bio:data.bio||'',distro:data.distro||'',learningGoal:data.learning_goal||'',avatarUrl:data.avatar_url||'',role:data.role||'learner',isPublic:data.is_public!==false,followerCount:Number(data.follower_count||0),followingCount:Number(data.following_count||0),postCount:Number(data.post_count||0),lastActiveAt:data.last_active_at||null};}
+export async function loadUserProfile(uid=state.lastUser?.uid){if(!state.ready||!uid)return null;const{data,error}=await state.client.from('profiles').select('*').eq('id',uid).maybeSingle();if(error)throw error;return mapProfile(data);}
+export async function saveUserProfile(uid=state.lastUser?.uid,profile={}){if(!state.ready||!uid)return;const username=String(profile.username||'').trim().toLowerCase().replace(/[^a-z0-9_.-]/g,'').slice(0,30);const payload={id:uid,display_name:String(profile.displayName||'').trim().slice(0,80),username:username||null,headline:String(profile.headline||'').trim().slice(0,120),bio:String(profile.bio||'').trim().slice(0,600),distro:String(profile.distro||'').slice(0,40),learning_goal:String(profile.learningGoal||'').slice(0,500),avatar_url:String(profile.avatarUrl||profile.photoURL||'').slice(0,500),is_public:profile.isPublic!==false,last_active_at:new Date().toISOString(),updated_at:new Date().toISOString()};const{error}=await state.client.from('profiles').upsert(payload,{onConflict:'id'});if(error)throw error;}
+export async function touchPresence(){if(!state.ready||!state.lastUser?.uid)return;await state.client.from('profiles').update({last_active_at:new Date().toISOString()}).eq('id',state.lastUser.uid);}
+export async function loadPublicProfiles({search='',limit=30}={}){if(!state.ready)return[];let q=state.client.from('profiles').select('id,display_name,username,headline,bio,distro,avatar_url,role,follower_count,following_count,post_count,last_active_at,is_public').eq('is_public',true).order('last_active_at',{ascending:false}).limit(Math.min(50,Math.max(1,limit)));const term=String(search||'').trim().replace(/[%_,()]/g,' ').slice(0,60);if(term)q=q.or(`display_name.ilike.%${term}%,username.ilike.%${term}%,headline.ilike.%${term}%,distro.ilike.%${term}%`);const{data,error}=await q;if(error)throw error;return(data||[]).map(mapProfile);}
+export async function loadProfileById(uid){return loadUserProfile(uid);}
 
-async function initSupabase(config) {
-  const source = supabaseConfig(config);
-  const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
-  const timeoutMs = Math.max(8000, Math.min(45000, Number(config.security?.requestTimeoutMs || 20000)));
-  state.client = createClient(source.url, source.publishableKey || source.anonKey, {
-    auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, flowType:'pkce' },
-    global:{
-      fetch:timeoutFetch(timeoutMs),
-      headers:{ 'X-Client-Info':'linuxaid-web' }
-    }
-  });
-  state.provider = 'supabase';
-  state.ready = true;
+export async function loadSyncedProgress(uid=state.lastUser?.uid){if(!state.ready||!uid)return null;const{data,error}=await state.client.from('learner_state').select('progress,learning').eq('user_id',uid).maybeSingle();if(error)throw error;return data?{progress:data.progress||null,learning:data.learning||null}:null;}
+export async function saveSyncedProgress(progress,learning,uid=state.lastUser?.uid){if(!state.ready||!uid)return;const{error}=await state.client.from('learner_state').upsert({user_id:uid,progress:progress||{},learning:learning||{},updated_at:new Date().toISOString()},{onConflict:'user_id'});if(error)throw error;}
 
-  const { data, error } = await state.client.auth.getSession();
-  if (error) console.warn('LinuxAid Supabase session restore failed:', error);
-  notifyAuth(data?.session?.user || null);
-  state.client.auth.onAuthStateChange((_event, session) => notifyAuth(session?.user || null));
-  return true;
-}
+export async function loadCommunityPosts({limit=30,authorId='',bookmarked=false}={}){if(!state.ready)return[];let q=state.client.from('community_posts').select('id,title,body,author_id,author_name,upvotes_count,reply_count,reaction_counts,bookmark_count,tags,is_solved,is_locked,created_at,updated_at').order('created_at',{ascending:false}).limit(Math.min(50,Math.max(1,limit)));if(authorId)q=q.eq('author_id',authorId);if(bookmarked&&state.lastUser?.uid){const{data:marks,error:markError}=await state.client.from('community_bookmarks').select('post_id').eq('user_id',state.lastUser.uid);if(markError)throw markError;const ids=(marks||[]).map(x=>x.post_id);if(!ids.length)return[];q=q.in('id',ids);}const{data,error}=await q;if(error)throw error;return(data||[]).map(p=>({id:p.id,title:p.title,body:p.body,authorId:p.author_id,authorName:p.author_name||'LinuxAid learner',replies:Number(p.reply_count||0),upvotes:Number(p.upvotes_count||0),reactionCounts:p.reaction_counts||{},bookmarks:Number(p.bookmark_count||0),tags:Array.isArray(p.tags)?p.tags:[],isSolved:Boolean(p.is_solved),isLocked:Boolean(p.is_locked),createdAt:p.created_at,updatedAt:p.updated_at,meta:`${p.author_name||'LinuxAid learner'} • ${new Date(p.created_at).toLocaleString()}`}));}
+export async function saveCommunityPost(post){if(!state.ready)throw new Error('LinuxAid backend is not configured.');const authorId=requireUserId();const tags=(Array.isArray(post.tags)?post.tags:[]).map(t=>String(t).toLowerCase().trim().replace(/[^a-z0-9+#._-]/g,'')).filter(Boolean).slice(0,5);const{data,error}=await state.client.from('community_posts').insert({id:post.id||crypto.randomUUID(),author_id:authorId,title:String(post.title||'').slice(0,160),body:String(post.body||'').slice(0,8000),tags}).select('id').single();if(error)throw error;return data;}
+export async function updateCommunityPost(postId,changes={}){const userId=requireUserId();const payload={};if('title'in changes)payload.title=String(changes.title||'').slice(0,160);if('body'in changes)payload.body=String(changes.body||'').slice(0,8000);if('isSolved'in changes)payload.is_solved=Boolean(changes.isSolved);payload.updated_at=new Date().toISOString();const{error}=await state.client.from('community_posts').update(payload).eq('id',postId).eq('author_id',userId);if(error)throw error;}
+export async function deleteCommunityPost(postId){const userId=requireUserId();const{error}=await state.client.from('community_posts').delete().eq('id',postId).eq('author_id',userId);if(error)throw error;}
+export async function toggleCommunityVote(postId){const userId=requireUserId();const{data:existing,error:lookupError}=await state.client.from('community_votes').select('post_id').eq('post_id',postId).eq('user_id',userId).maybeSingle();if(lookupError)throw lookupError;if(existing){const{error}=await state.client.from('community_votes').delete().eq('post_id',postId).eq('user_id',userId);if(error)throw error;return false;}const{error}=await state.client.from('community_votes').insert({post_id:postId,user_id:userId});if(error)throw error;return true;}
+export async function loadCommunityReplies(postId){if(!state.ready)return[];const{data,error}=await state.client.from('community_replies').select('id,post_id,author_id,author_name,body,created_at,updated_at').eq('post_id',postId).order('created_at',{ascending:true}).limit(100);if(error)throw error;return(data||[]).map(r=>({id:r.id,postId:r.post_id,authorId:r.author_id,body:r.body,displayName:r.author_name||'LinuxAid learner',createdAt:r.created_at,updatedAt:r.updated_at}));}
+export async function saveCommunityReply(postId,body){const authorId=requireUserId();const{data,error}=await state.client.from('community_replies').insert({post_id:postId,author_id:authorId,body:String(body||'').slice(0,5000)}).select('id').single();if(error)throw error;return data;}
+export async function toggleBookmark(postId){const userId=requireUserId();const{data:existing,error:lookupError}=await state.client.from('community_bookmarks').select('post_id').eq('user_id',userId).eq('post_id',postId).maybeSingle();if(lookupError)throw lookupError;if(existing){const{error}=await state.client.from('community_bookmarks').delete().eq('user_id',userId).eq('post_id',postId);if(error)throw error;return false;}const{error}=await state.client.from('community_bookmarks').insert({user_id:userId,post_id:postId});if(error)throw error;return true;}
+export async function loadBookmarkedPostIds(){if(!state.ready||!state.lastUser?.uid)return new Set();const{data,error}=await state.client.from('community_bookmarks').select('post_id').eq('user_id',state.lastUser.uid);if(error)throw error;return new Set((data||[]).map(x=>x.post_id));}
+export async function setPostReaction(postId,reaction){const userId=requireUserId();const allowed=new Set(['like','helpful','insightful','solved']);if(!allowed.has(reaction))throw new Error('Unknown reaction.');const{data:existing,error:lookupError}=await state.client.from('community_reactions').select('reaction').eq('post_id',postId).eq('user_id',userId).maybeSingle();if(lookupError)throw lookupError;if(existing?.reaction===reaction){const{error}=await state.client.from('community_reactions').delete().eq('post_id',postId).eq('user_id',userId);if(error)throw error;return'';}const{error}=await state.client.from('community_reactions').upsert({post_id:postId,user_id:userId,reaction},{onConflict:'post_id,user_id'});if(error)throw error;return reaction;}
+export async function loadMyReactions(postIds=[]){if(!state.ready||!state.lastUser?.uid||!postIds.length)return new Map();const{data,error}=await state.client.from('community_reactions').select('post_id,reaction').eq('user_id',state.lastUser.uid).in('post_id',postIds.slice(0,100));if(error)throw error;return new Map((data||[]).map(x=>[x.post_id,x.reaction]));}
 
-export async function initBackend(config = window.LINUXAID_CONFIG || {}) {
-  if (state.ready) return state.provider;
-  if (state.initPromise) return state.initPromise;
-  state.config = config;
-  state.initPromise = (async () => {
-    try {
-      if (!hasSupabase(config)) return 'none';
-      await initSupabase(config);
-      return state.provider;
-    } catch (error) {
-      console.error('LinuxAid backend initialization failed:', error);
-      state.provider = 'none';
-      state.ready = false;
-      state.client = null;
-      return 'none';
-    }
-  })();
-  try { return await state.initPromise; }
-  finally { state.initPromise = null; }
-}
+export async function loadFollowingIds(){if(!state.ready||!state.lastUser?.uid)return new Set();const{data,error}=await state.client.from('follows').select('following_id').eq('follower_id',state.lastUser.uid);if(error)throw error;return new Set((data||[]).map(x=>x.following_id));}
+export async function toggleFollow(targetId){const me=requireUserId();if(targetId===me)throw new Error('You cannot follow yourself.');const{data:existing,error:lookupError}=await state.client.from('follows').select('following_id').eq('follower_id',me).eq('following_id',targetId).maybeSingle();if(lookupError)throw lookupError;if(existing){const{error}=await state.client.from('follows').delete().eq('follower_id',me).eq('following_id',targetId);if(error)throw error;return false;}const{error}=await state.client.from('follows').insert({follower_id:me,following_id:targetId});if(error)throw error;return true;}
+export async function loadBlockedIds(){if(!state.ready||!state.lastUser?.uid)return new Set();const{data,error}=await state.client.from('user_blocks').select('blocked_id').eq('blocker_id',state.lastUser.uid);if(error)throw error;return new Set((data||[]).map(x=>x.blocked_id));}
+export async function blockUser(targetId){const me=requireUserId();if(targetId===me)throw new Error('You cannot block yourself.');const{error}=await state.client.from('user_blocks').upsert({blocker_id:me,blocked_id:targetId},{onConflict:'blocker_id,blocked_id'});if(error)throw error;await state.client.from('follows').delete().or(`and(follower_id.eq.${me},following_id.eq.${targetId}),and(follower_id.eq.${targetId},following_id.eq.${me})`);return true;}
+export async function unblockUser(targetId){const me=requireUserId();const{error}=await state.client.from('user_blocks').delete().eq('blocker_id',me).eq('blocked_id',targetId);if(error)throw error;return true;}
+export async function reportContent(targetType,targetId,reason){const reporterId=requireUserId();const{error}=await state.client.from('content_reports').insert({reporter_id:reporterId,target_type:targetType,target_id:targetId,reason:String(reason||'').trim().slice(0,500)});if(error)throw error;return true;}
 
-export function getBackendStatus() {
-  return { provider:state.provider, ready:state.ready, user:state.lastUser };
-}
+export async function createDirectConversation(peerId){requireUserId();const{data,error}=await state.client.rpc('create_direct_conversation',{peer_id:peerId});if(error)throw error;return data;}
+export async function loadConversations(){const me=requireUserId();const{data:memberships,error:mErr}=await state.client.from('conversation_members').select('conversation_id,last_read_at').eq('user_id',me);if(mErr)throw mErr;const ids=(memberships||[]).map(x=>x.conversation_id);if(!ids.length)return[];const[{data:convs,error:cErr},{data:members,error:memErr}]=await Promise.all([state.client.from('conversations').select('id,title,is_group,last_message_at,last_message_preview,last_sender_id,created_at').in('id',ids).order('last_message_at',{ascending:false}),state.client.from('conversation_members').select('conversation_id,user_id').in('conversation_id',ids)]);if(cErr)throw cErr;if(memErr)throw memErr;const peerIds=[...new Set((members||[]).map(x=>x.user_id).filter(id=>id!==me))];let profiles=[];if(peerIds.length){const{data,error}=await state.client.from('profiles').select('id,display_name,username,avatar_url,headline').in('id',peerIds);if(error)throw error;profiles=data||[];}const profileMap=new Map(profiles.map(p=>[p.id,p]));const readMap=new Map((memberships||[]).map(x=>[x.conversation_id,x.last_read_at]));return(convs||[]).map(c=>{const peerIdsFor=(members||[]).filter(m=>m.conversation_id===c.id&&m.user_id!==me).map(m=>m.user_id);const peer=profileMap.get(peerIdsFor[0])||null;return{...c,peer,unread:Boolean(c.last_message_at&&readMap.get(c.id)&&new Date(c.last_message_at)>new Date(readMap.get(c.id))&&c.last_sender_id!==me)};});}
+export async function loadMessages(conversationId,{limit=80}={}){requireUserId();const{data,error}=await state.client.from('messages').select('id,conversation_id,sender_id,body,created_at,edited_at,deleted_at').eq('conversation_id',conversationId).order('created_at',{ascending:true}).limit(Math.min(120,Math.max(1,limit)));if(error)throw error;return data||[];}
+export async function sendMessage(conversationId,body){const senderId=requireUserId();const text=String(body||'').trim().slice(0,4000);if(!text)throw new Error('Message cannot be empty.');const{data,error}=await state.client.from('messages').insert({conversation_id:conversationId,sender_id:senderId,body:text}).select('id,created_at').single();if(error)throw error;return data;}
+export async function markConversationRead(conversationId){requireUserId();const{error}=await state.client.rpc('mark_conversation_read',{cid:conversationId});if(error)throw error;}
 
-export function onAuthStateChangedListener(callback) {
-  if (typeof callback !== 'function') return () => {};
-  state.authSubscriptions.add(callback);
-  queueMicrotask(() => callback(state.lastUser));
-  return () => state.authSubscriptions.delete(callback);
-}
+export async function loadNotifications(limit=30){if(!state.ready||!state.lastUser?.uid)return[];const{data,error}=await state.client.from('notifications').select('*').eq('user_id',state.lastUser.uid).order('created_at',{ascending:false}).limit(Math.min(50,Math.max(1,limit)));if(error)throw error;return data||[];}
+export async function markNotificationRead(id){if(!state.ready||!state.lastUser?.uid)return;const{error}=await state.client.from('notifications').update({read_at:new Date().toISOString()}).eq('id',id).eq('user_id',state.lastUser.uid);if(error)throw error;}
+export async function markAllNotificationsRead(){if(!state.ready||!state.lastUser?.uid)return;const{error}=await state.client.from('notifications').update({read_at:new Date().toISOString()}).eq('user_id',state.lastUser.uid).is('read_at',null);if(error)throw error;}
 
-export async function getCurrentUser() {
-  if (!state.ready || !state.client) return null;
-  const { data, error } = await state.client.auth.getUser();
-  if (error && error.status !== 401) throw error;
-  notifyAuth(data?.user || null);
-  return state.lastUser;
-}
+export function subscribeToTable(table,callback,filter=''){if(!state.ready||!state.client||typeof callback!=='function')return()=>{};let channel=state.client.channel(`linuxaid:${table}:${crypto.randomUUID()}`);const opts={event:'*',schema:'public',table};if(filter)opts.filter=filter;channel=channel.on('postgres_changes',opts,payload=>callback(payload)).subscribe();return()=>{try{state.client.removeChannel(channel);}catch{}};}
 
-export async function signInWithGoogleClient() {
-  if (!state.ready) throw new Error('LinuxAid backend is not configured.');
-  const redirectTo = new URL('dashboard.html', location.href).href;
-  const { data, error } = await state.client.auth.signInWithOAuth({
-    provider:'google',
-    options:{ redirectTo, queryParams:{ access_type:'offline', prompt:'consent' } }
-  });
-  if (error) throw error;
-  return data;
-}
-
-export async function signInWithEmailClient(email, password, captchaToken = '') {
-  if (!state.ready) throw new Error('LinuxAid backend is not configured.');
-  const payload = { email, password };
-  if (captchaToken) payload.options = { captchaToken };
-  const { data, error } = await state.client.auth.signInWithPassword(payload);
-  if (error) throw error;
-  notifyAuth(data.user);
-  return state.lastUser;
-}
-
-export async function createAccountWithEmailClient(email, password, displayName='LinuxAid Learner', captchaToken = '') {
-  if (!state.ready) throw new Error('LinuxAid backend is not configured.');
-  const emailRedirectTo = new URL('auth.html?verified=1', location.href).href;
-  const options = { data:{ display_name:displayName }, emailRedirectTo };
-  if (captchaToken) options.captchaToken = captchaToken;
-  const { data, error } = await state.client.auth.signUp({ email, password, options });
-  if (error) throw error;
-  notifyAuth(data.session?.user || null);
-  return normalizeUser(data.user);
-}
-
-export async function sendPasswordResetClient(email, captchaToken = '') {
-  if (!state.ready) throw new Error('LinuxAid backend is not configured.');
-  const redirectTo = new URL('auth.html?mode=recovery', location.href).href;
-  const options = { redirectTo };
-  if (captchaToken) options.captchaToken = captchaToken;
-  const { error } = await state.client.auth.resetPasswordForEmail(email, options);
-  if (error) throw error;
-  return true;
-}
-
-export async function updatePasswordClient(password) {
-  if (!state.ready) throw new Error('LinuxAid backend is not configured.');
-  const { data, error } = await state.client.auth.updateUser({ password });
-  if (error) throw error;
-  notifyAuth(data.user);
-  return state.lastUser;
-}
-
-export async function sendEmailVerificationClient() {
-  if (!state.ready) throw new Error('LinuxAid backend is not configured.');
-  const user = await getCurrentUser();
-  if (!user?.email) throw new Error('No signed-in email account.');
-  const emailRedirectTo = new URL('auth.html?verified=1', location.href).href;
-  const { error } = await state.client.auth.resend({ type:'signup', email:user.email, options:{ emailRedirectTo } });
-  if (error) throw error;
-  return true;
-}
-
-export async function signOutClient() {
-  if (!state.ready) return;
-  const { error } = await state.client.auth.signOut();
-  if (error) throw error;
-  notifyAuth(null);
-}
-
-export async function getAuthHeaders() {
-  if (!state.ready) return {};
-  const { data } = await state.client.auth.getSession();
-  const token = data?.session?.access_token;
-  return token ? { Authorization:`Bearer ${token}` } : {};
-}
-
-function requireUserId() {
-  const id = state.lastUser?.uid;
-  if (!id) throw new Error('Sign in to use this synced feature.');
-  return id;
-}
-
-export async function loadUserChatHistory(uid = state.lastUser?.uid) {
-  if (!state.ready || !uid) return [];
-  const { data, error } = await state.client.from('learner_state').select('chat_history').eq('user_id', uid).maybeSingle();
-  if (error) throw error;
-  return Array.isArray(data?.chat_history) ? data.chat_history : [];
-}
-
-export async function saveUserChatHistory(uid = state.lastUser?.uid, messages = []) {
-  if (!state.ready || !uid) return;
-  const safeMessages = (Array.isArray(messages) ? messages : []).slice(-60).map(item => ({
-    role:item.role === 'user' ? 'user' : 'assistant',
-    text:String(item.text || '').slice(0,12000)
-  }));
-  const { error } = await state.client.from('learner_state').upsert({
-    user_id:uid,
-    chat_history:safeMessages,
-    updated_at:new Date().toISOString()
-  }, { onConflict:'user_id' });
-  if (error) throw error;
-}
-
-export async function loadUserProfile(uid = state.lastUser?.uid) {
-  if (!state.ready || !uid) return null;
-  const { data, error } = await state.client.from('profiles').select('*').eq('id', uid).maybeSingle();
-  if (error) throw error;
-  if (!data) return null;
-  return {
-    displayName:data.display_name || '',
-    email:state.lastUser?.email || '',
-    distro:data.distro || '',
-    learningGoal:data.learning_goal || '',
-    avatarUrl:data.avatar_url || '',
-    role:data.role || 'learner'
-  };
-}
-
-export async function saveUserProfile(uid = state.lastUser?.uid, profile = {}) {
-  if (!state.ready || !uid) return;
-  const payload = {
-    id:uid,
-    display_name:String(profile.displayName || '').slice(0,80),
-    distro:String(profile.distro || '').slice(0,40),
-    learning_goal:String(profile.learningGoal || '').slice(0,500),
-    avatar_url:String(profile.avatarUrl || profile.photoURL || '').slice(0,500),
-    updated_at:new Date().toISOString()
-  };
-  const { error } = await state.client.from('profiles').upsert(payload, { onConflict:'id' });
-  if (error) throw error;
-}
-
-export async function loadSyncedProgress(uid = state.lastUser?.uid) {
-  if (!state.ready || !uid) return null;
-  const { data, error } = await state.client.from('learner_state').select('progress,learning').eq('user_id', uid).maybeSingle();
-  if (error) throw error;
-  return data ? { progress:data.progress || null, learning:data.learning || null } : null;
-}
-
-export async function saveSyncedProgress(progress, learning, uid = state.lastUser?.uid) {
-  if (!state.ready || !uid) return;
-  const { error } = await state.client.from('learner_state').upsert({
-    user_id:uid,
-    progress:progress || {},
-    learning:learning || {},
-    updated_at:new Date().toISOString()
-  }, { onConflict:'user_id' });
-  if (error) throw error;
-}
-
-export async function loadCommunityPosts() {
-  if (!state.ready) return [];
-  const { data, error } = await state.client
-    .from('community_posts')
-    .select('id,title,body,author_name,upvotes_count,reply_count,created_at')
-    .order('created_at', { ascending:false })
-    .limit(30);
-  if (error) throw error;
-  return (data || []).map(post => ({
-    id:post.id,
-    title:post.title,
-    body:post.body,
-    replies:post.reply_count || 0,
-    upvotes:post.upvotes_count || 0,
-    meta:`${post.author_name || 'LinuxAid learner'} • ${new Date(post.created_at).toLocaleString()}`
-  }));
-}
-
-export async function saveCommunityPost(post) {
-  if (!state.ready) throw new Error('LinuxAid backend is not configured.');
-  const authorId = requireUserId();
-  const { data, error } = await state.client.from('community_posts').insert({
-    id:post.id || crypto.randomUUID(),
-    author_id:authorId,
-    title:String(post.title || '').slice(0,160),
-    body:String(post.body || '').slice(0,8000)
-  }).select('id').single();
-  if (error) throw error;
-  return data;
-}
-
-export async function toggleCommunityVote(postId) {
-  if (!state.ready) throw new Error('Voting requires the Supabase backend.');
-  const userId = requireUserId();
-  const { data:existing, error:lookupError } = await state.client.from('community_votes').select('post_id').eq('post_id',postId).eq('user_id',userId).maybeSingle();
-  if (lookupError) throw lookupError;
-  if (existing) {
-    const { error } = await state.client.from('community_votes').delete().eq('post_id',postId).eq('user_id',userId);
-    if (error) throw error;
-    return false;
-  }
-  const { error } = await state.client.from('community_votes').insert({ post_id:postId, user_id:userId });
-  if (error) throw error;
-  return true;
-}
-
-export async function loadCommunityReplies(postId) {
-  if (!state.ready) return [];
-  const { data, error } = await state.client
-    .from('community_replies')
-    .select('id,body,author_name,created_at')
-    .eq('post_id',postId)
-    .order('created_at', { ascending:true })
-    .limit(60);
-  if (error) throw error;
-  return (data || []).map(reply => ({
-    id:reply.id,
-    body:reply.body,
-    displayName:reply.author_name || 'LinuxAid learner',
-    createdAt:reply.created_at
-  }));
-}
-
-export async function saveCommunityReply(postId, body) {
-  if (!state.ready) throw new Error('Replies require the Supabase backend.');
-  const authorId = requireUserId();
-  const { data, error } = await state.client.from('community_replies').insert({
-    post_id:postId,
-    author_id:authorId,
-    body:String(body || '').slice(0,5000)
-  }).select('id').single();
-  if (error) throw error;
-  return data;
-}
-
-export async function loadNotifications(limit = 30) {
-  if (!state.ready || !state.lastUser?.uid) return [];
-  const { data, error } = await state.client.from('notifications').select('*').eq('user_id',state.lastUser.uid).order('created_at',{ ascending:false }).limit(Math.min(50,Math.max(1,limit)));
-  if (error) throw error;
-  return data || [];
-}
-
-export async function markNotificationRead(id) {
-  if (!state.ready || !state.lastUser?.uid) return;
-  const { error } = await state.client.from('notifications').update({ read_at:new Date().toISOString() }).eq('id',id).eq('user_id',state.lastUser.uid);
-  if (error) throw error;
-}
-
-export async function uploadAvatar(file) {
-  if (!state.ready) throw new Error('Avatar uploads require the Supabase backend.');
-  const userId = requireUserId();
-  if (!file || !String(file.type || '').startsWith('image/')) throw new Error('Choose an image file.');
-  if (file.size > 2 * 1024 * 1024) throw new Error('Avatar images must be 2 MB or smaller.');
-  const extension = String(file.name || 'avatar.png').split('.').pop().replace(/[^a-z0-9]/gi,'').toLowerCase() || 'png';
-  const path = `${userId}/avatar.${extension}`;
-  const { error } = await state.client.storage.from('avatars').upload(path, file, { upsert:true, contentType:file.type, cacheControl:'3600' });
-  if (error) throw error;
-  const { data } = state.client.storage.from('avatars').getPublicUrl(path);
-  const current = await loadUserProfile(userId) || {};
-  await saveUserProfile(userId, { ...current, avatarUrl:data.publicUrl });
-  return data.publicUrl;
-}
-
-export async function invokeBackendFunction(name, body = {}) {
-  if (!state.ready) throw new Error('Supabase Edge Functions are not configured.');
-  const { data, error } = await state.client.functions.invoke(name, { body });
-  if (error) throw error;
-  return data;
-}
+export async function uploadAvatar(file){if(!state.ready)throw new Error('Avatar uploads require Supabase.');const userId=requireUserId();if(!file||!String(file.type||'').startsWith('image/'))throw new Error('Choose an image file.');if(file.size>2*1024*1024)throw new Error('Avatar images must be 2 MB or smaller.');const ext=String(file.name||'avatar.png').split('.').pop().replace(/[^a-z0-9]/gi,'').toLowerCase()||'png';const path=`${userId}/avatar.${ext}`;const{error}=await state.client.storage.from('avatars').upload(path,file,{upsert:true,contentType:file.type,cacheControl:'3600'});if(error)throw error;const{data}=state.client.storage.from('avatars').getPublicUrl(path);const current=await loadUserProfile(userId)||{};await saveUserProfile(userId,{...current,avatarUrl:data.publicUrl});return data.publicUrl;}
+export async function invokeBackendFunction(name,body={}){if(!state.ready)throw new Error('Supabase Edge Functions are not configured.');const{data,error}=await state.client.functions.invoke(name,{body});if(error)throw error;return data;}
