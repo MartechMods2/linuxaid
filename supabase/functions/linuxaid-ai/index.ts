@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const SYSTEM_PROMPT = `You are LinuxAid, a beginner-friendly Linux tutor. Explain Linux concepts step by step. Prefer safe read-only inspection before system changes. Clearly warn before privileged or destructive commands. Distinguish distro-specific commands. Never pretend a browser simulator changed a real machine. Keep answers practical, accurate and concise.`;
+const DEFAULT_TIMEOUT_MS = 18_000;
 
 const allowedOrigins = new Set(
   (Deno.env.get('LINUXAID_ALLOWED_ORIGINS') || 'https://martechmods2.github.io,http://localhost:3000,http://127.0.0.1:3000')
@@ -16,7 +17,11 @@ function corsHeaders(request: Request) {
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Vary': 'Origin',
     'Content-Type': 'application/json; charset=utf-8',
-    'Cache-Control': 'no-store'
+    'Cache-Control': 'no-store, max-age=0',
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'no-referrer',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
   };
 }
 
@@ -28,52 +33,86 @@ function normalizeHistory(value: unknown) {
   return (Array.isArray(value) ? value : [])
     .filter((item: any) => item && ['user','assistant'].includes(item.role) && item.content)
     .slice(-10)
-    .map((item: any) => ({ role:item.role, content:String(item.content).slice(0,4000) }));
+    .map((item: any) => ({ role:item.role, content:String(item.content).replace(/\u0000/g,'').slice(0,4000) }));
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit) {
+  const configured = Number(Deno.env.get('AI_TIMEOUT_MS') || DEFAULT_TIMEOUT_MS);
+  const timeout = Math.min(30_000, Math.max(5_000, Number.isFinite(configured) ? configured : DEFAULT_TIMEOUT_MS));
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  try { return await fetch(url, { ...init, signal:controller.signal }); }
+  finally { clearTimeout(timer); }
 }
 
 async function askGemini(prompt: string, history: any[]) {
   const apiKey = Deno.env.get('GEMINI_API_KEY');
-  if (!apiKey) throw new Error('GEMINI_API_KEY is not configured.');
+  if (!apiKey) throw new Error('AI provider is not configured.');
   const model = Deno.env.get('GEMINI_MODEL') || 'gemini-2.5-flash';
   const contents = [
     ...history.map(item => ({ role:item.role === 'assistant' ? 'model' : 'user', parts:[{ text:item.content }] })),
     { role:'user', parts:[{ text:prompt }] }
   ];
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+  const response = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`, {
     method:'POST',
     headers:{ 'Content-Type':'application/json' },
-    body:JSON.stringify({
-      systemInstruction:{ parts:[{ text:SYSTEM_PROMPT }] },
-      contents,
-      generationConfig:{ temperature:.35, maxOutputTokens:900 }
-    })
+    body:JSON.stringify({ systemInstruction:{ parts:[{ text:SYSTEM_PROMPT }] }, contents, generationConfig:{ temperature:.35, maxOutputTokens:900 } })
   });
   const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result?.error?.message || `Gemini request failed (${response.status}).`);
+  if (!response.ok) throw new Error(result?.error?.message || `Provider request failed (${response.status}).`);
   const answer = String(result?.candidates?.[0]?.content?.parts?.map((part: any) => part?.text || '').join('') || '').trim();
-  if (!answer) throw new Error('Gemini returned an empty answer.');
+  if (!answer) throw new Error('AI provider returned an empty answer.');
   return answer;
 }
 
 async function askOpenAI(prompt: string, history: any[]) {
   const apiKey = Deno.env.get('OPENAI_API_KEY');
-  if (!apiKey) throw new Error('OPENAI_API_KEY is not configured.');
+  if (!apiKey) throw new Error('AI provider is not configured.');
   const model = Deno.env.get('OPENAI_MODEL') || 'gpt-5-mini';
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
     method:'POST',
     headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${apiKey}` },
-    body:JSON.stringify({
-      model,
-      messages:[{ role:'system', content:SYSTEM_PROMPT }, ...history, { role:'user', content:prompt }],
-      temperature:.35,
-      max_completion_tokens:900
-    })
+    body:JSON.stringify({ model, messages:[{ role:'system', content:SYSTEM_PROMPT }, ...history, { role:'user', content:prompt }], temperature:.35, max_completion_tokens:900 })
   });
   const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result?.error?.message || `OpenAI request failed (${response.status}).`);
+  if (!response.ok) throw new Error(result?.error?.message || `Provider request failed (${response.status}).`);
   const answer = String(result?.choices?.[0]?.message?.content || '').trim();
-  if (!answer) throw new Error('OpenAI returned an empty answer.');
+  if (!answer) throw new Error('AI provider returned an empty answer.');
   return answer;
+}
+
+async function askNvidia(prompt: string, history: any[]) {
+  const apiKey = Deno.env.get('NVIDIA_API_KEY');
+  if (!apiKey) throw new Error('AI provider is not configured.');
+  const model = Deno.env.get('NVIDIA_MODEL') || 'nvidia/nemotron-3.5-lightning-30b-a3b';
+  const endpoint = Deno.env.get('NVIDIA_BASE_URL') || 'https://integrate.api.nvidia.com/v1/chat/completions';
+  const response = await fetchWithTimeout(endpoint, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${apiKey}` },
+    body:JSON.stringify({ model, messages:[{ role:'system', content:SYSTEM_PROMPT }, ...history, { role:'user', content:prompt }], temperature:.3, top_p:.9, max_tokens:1000, stream:false })
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result?.error?.message || result?.message || `Provider request failed (${response.status}).`);
+  const answer = String(result?.choices?.[0]?.message?.content || '').trim();
+  if (!answer) throw new Error('AI provider returned an empty answer.');
+  return answer;
+}
+
+function selectedProvider() {
+  const configured = String(Deno.env.get('AI_PROVIDER') || '').toLowerCase();
+  if (configured === 'nvidia' && Deno.env.get('NVIDIA_API_KEY')) return 'nvidia';
+  if (configured === 'gemini' && Deno.env.get('GEMINI_API_KEY')) return 'gemini';
+  if (configured === 'openai' && Deno.env.get('OPENAI_API_KEY')) return 'openai';
+  if (Deno.env.get('NVIDIA_API_KEY')) return 'nvidia';
+  if (Deno.env.get('GEMINI_API_KEY')) return 'gemini';
+  if (Deno.env.get('OPENAI_API_KEY')) return 'openai';
+  return '';
+}
+
+async function askProvider(provider: string, prompt: string, history: any[]) {
+  if (provider === 'nvidia') return askNvidia(prompt, history);
+  if (provider === 'openai') return askOpenAI(prompt, history);
+  return askGemini(prompt, history);
 }
 
 Deno.serve(async request => {
@@ -89,6 +128,9 @@ Deno.serve(async request => {
   const token = authHeader.replace(/^Bearer\s+/i, '').trim();
   if (!token) return json(request, 401, { error:'Sign in to use LinuxAid AI.' });
 
+  const contentLength = Number(request.headers.get('content-length') || 0);
+  if (contentLength > 50_000) return json(request, 413, { error:'Request is too large.' });
+
   const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
   const serviceRole = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
   if (!supabaseUrl || !serviceRole) return json(request, 500, { error:'Backend environment is incomplete.' });
@@ -102,39 +144,25 @@ Deno.serve(async request => {
   try { payload = await request.json(); }
   catch { return json(request, 400, { error:'Request body must be JSON.' }); }
 
-  const prompt = String(payload?.prompt || '').trim().slice(0,6000);
+  const prompt = String(payload?.prompt || '').replace(/\u0000/g,'').trim().slice(0,6000);
   if (!prompt) return json(request, 400, { error:'Prompt is required.' });
   const history = normalizeHistory(payload?.history);
   const dailyLimit = Math.max(1, Math.min(500, Number(Deno.env.get('LINUXAID_AI_DAILY_LIMIT') || 40)));
 
   try {
-    const { data:usage, error:quotaError } = await admin.rpc('consume_linuxaid_ai_quota', {
-      target_user:user.id,
-      daily_limit:dailyLimit
-    });
+    const { data:usage, error:quotaError } = await admin.rpc('consume_linuxaid_ai_quota', { target_user:user.id, daily_limit:dailyLimit });
     if (quotaError) {
-      if (String(quotaError.message || '').includes('AI_DAILY_LIMIT_REACHED')) {
-        return json(request, 429, { error:`Daily AI limit reached (${dailyLimit}). LinuxAid's local tutor and tools are still available.` });
-      }
+      if (String(quotaError.message || '').includes('AI_DAILY_LIMIT_REACHED')) return json(request, 429, { error:`Daily AI limit reached (${dailyLimit}). LinuxAid's local tutor and tools are still available.` });
       throw quotaError;
     }
 
-    const configuredProvider = String(Deno.env.get('AI_PROVIDER') || '').toLowerCase();
-    let provider = configuredProvider;
-    if (!provider) provider = Deno.env.get('GEMINI_API_KEY') ? 'gemini' : Deno.env.get('OPENAI_API_KEY') ? 'openai' : '';
-    if (!provider) return json(request, 503, { error:'No remote AI provider is configured on the server.' });
-
-    const answer = provider === 'openai'
-      ? await askOpenAI(prompt, history)
-      : await askGemini(prompt, history);
-
-    return json(request, 200, {
-      answer,
-      provider,
-      usage:{ requestsToday:Number(usage || 1), dailyLimit }
-    });
+    const provider = selectedProvider();
+    if (!provider) return json(request, 503, { error:'Remote LinuxAid AI is not configured yet.' });
+    const answer = await askProvider(provider, prompt, history);
+    return json(request, 200, { answer, usage:{ requestsToday:Number(usage || 1), dailyLimit } });
   } catch (error) {
-    console.error('linuxaid-ai error', error);
-    return json(request, 500, { error:error instanceof Error ? error.message : 'LinuxAid AI request failed.' });
+    const timedOut = error instanceof DOMException && error.name === 'AbortError';
+    console.error('linuxaid-ai error', timedOut ? 'provider timeout' : error instanceof Error ? error.message : error);
+    return json(request, timedOut ? 504 : 502, { error:timedOut ? 'LinuxAid AI timed out. Please retry.' : 'LinuxAid AI is temporarily unavailable.' });
   }
 });
