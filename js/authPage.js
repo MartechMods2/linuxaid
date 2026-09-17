@@ -1,215 +1,41 @@
-import {
-  initBackend, getBackendStatus, getCurrentUser, onAuthStateChangedListener,
-  signInWithGoogleClient, signInWithEmailClient, createAccountWithEmailClient,
-  sendPasswordResetClient, updatePasswordClient
-} from '../backend.js';
+import { isSupabaseAuthReady,getSessionUser,signInEmail,signUpEmail,signInMagicLink,resetPassword,updatePassword,signInGoogle,exchangeCodeIfPresent } from './authClientV5.js';
 
-const config = window.LINUXAID_CONFIG || {};
-await initBackend(config);
-const backend = getBackendStatus();
-const backendReady = backend.ready;
-const params = new URLSearchParams(location.search);
-let mode = params.get('mode') === 'recovery' ? 'recovery' : 'signin';
-let busy = false;
+const config=window.LINUXAID_CONFIG||{};
+const params=new URLSearchParams(location.search);
+const next=params.get('next')==='dashboard'?'dashboard.html':'dashboard.html';
+let mode=params.get('mode')==='recovery'?'recovery':'signin';
+let busy=false,captchaToken='',turnstileWidget=null;
+const $=id=>document.getElementById(id);
+const els={heading:$('authHeading'),subheading:$('authSubheading'),message:$('authMessage'),form:$('authForm'),name:$('authName'),email:$('authPageEmail'),password:$('authPagePassword'),confirm:$('authConfirmPassword'),nameField:$('nameField'),confirmField:$('confirmField'),submit:$('authSubmit'),google:$('authGoogle'),forgot:$('forgotPassword'),demo:$('demoMode'),togglePassword:$('togglePassword')};
+const backendReady=isSupabaseAuthReady();
 
-const $ = id => document.getElementById(id);
-const els = {
-  heading:$('authHeading'), subheading:$('authSubheading'), message:$('authMessage'),
-  form:$('authForm'), name:$('authName'), email:$('authPageEmail'), password:$('authPagePassword'),
-  confirm:$('authConfirmPassword'), nameField:$('nameField'), confirmField:$('confirmField'),
-  submit:$('authSubmit'), google:$('authGoogle'), forgot:$('forgotPassword'), demo:$('demoMode'),
-  togglePassword:$('togglePassword')
-};
+function setMessage(text='',type='info'){if(!els.message)return;els.message.textContent=text;els.message.className=`auth-message ${text?`show ${type}`:''}`;}
+function friendly(error){const code=String(error?.code||error?.name||'').toLowerCase();const msg=String(error?.message||'');if(code.includes('invalid_credentials')||code.includes('invalid_login_credentials'))return'Email or password is incorrect, or the email is not verified yet.';if(msg.toLowerCase().includes('email not confirmed'))return'Please verify your email first, then sign in.';if(msg.toLowerCase().includes('already registered'))return'That email already has an account. Try signing in.';if(msg.toLowerCase().includes('captcha'))return'Bot verification failed. Refresh the challenge and try again.';if(code.includes('rate')||msg.toLowerCase().includes('too many'))return'Too many attempts. Wait a few minutes and try again.';return msg||'Something went wrong. Please try again.';}
+function validPassword(){const p=els.password?.value||'',c=els.confirm?.value||'';if(p.length<8)return'Use at least 8 characters.';if(!/[A-Za-z]/.test(p)||!/[0-9]/.test(p))return'Use both letters and numbers.';if((mode==='create'||mode==='recovery')&&p!==c)return'The passwords do not match.';return'';}
+function setBusy(value){busy=value;[els.submit,els.google,els.forgot,els.demo,$('magicLink')].forEach(b=>{if(b)b.disabled=value;});if(els.submit)els.submit.textContent=value?'Please wait…':mode==='recovery'?'Update password':mode==='create'?'Create account':'Sign in';}
+function setMode(nextMode){mode=nextMode;const create=mode==='create',recovery=mode==='recovery';els.heading.textContent=recovery?'Choose a new password':create?'Create your free account':'Welcome back';els.subheading.textContent=recovery?'Set a fresh password for your LinuxAid account.':create?'Create a LinuxAid account and keep your progress synced.':'Sign in to continue your Linux learning journey.';if(els.nameField)els.nameField.hidden=!create;if(els.confirmField)els.confirmField.hidden=!(create||recovery);const emailLabel=els.email?.closest('label');if(emailLabel)emailLabel.hidden=recovery;if(els.google)els.google.hidden=recovery||config.auth?.googleEnabled!==true;if(els.forgot)els.forgot.hidden=create||recovery;const ml=$('magicLink');if(ml)ml.hidden=create||recovery||config.auth?.magicLinkEnabled!==true;document.querySelectorAll('[data-auth-tab]').forEach(b=>{const a=b.dataset.authTab===mode;b.classList.toggle('active',a);b.setAttribute('aria-selected',String(a));});setMessage('');}
 
-function setMessage(text='', type='info') {
-  if (!els.message) return;
-  els.message.textContent = text;
-  els.message.className = `auth-message ${text ? `show ${type}` : ''}`;
-}
+function rateKey(){return'linuxaid-auth-attempts-v1';}
+function canAttempt(){const now=Date.now(),windowMs=Number(config.security?.authAttemptWindowMs||600000),max=Number(config.security?.maxAuthAttemptsPerWindow||6);let arr=[];try{arr=JSON.parse(localStorage.getItem(rateKey())||'[]');}catch{}arr=(Array.isArray(arr)?arr:[]).filter(t=>now-Number(t)<windowMs);if(arr.length>=max){localStorage.setItem(rateKey(),JSON.stringify(arr));return false;}arr.push(now);localStorage.setItem(rateKey(),JSON.stringify(arr));return true;}
+function clearAttempts(){localStorage.removeItem(rateKey());}
 
-function setMode(next) {
-  mode = next;
-  const create = mode === 'create';
-  const recovery = mode === 'recovery';
+async function ensureTurnstile(){const siteKey=String(config.security?.turnstileSiteKey||'').trim();if(!siteKey)return;let box=document.getElementById('turnstileBox');if(!box){box=document.createElement('div');box.id='turnstileBox';box.style.margin='12px 0';els.submit?.parentElement?.insertBefore(box,els.submit);}if(!document.querySelector('script[data-turnstile]')){const s=document.createElement('script');s.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';s.async=true;s.defer=true;s.dataset.turnstile='1';document.head.appendChild(s);await new Promise((resolve,reject)=>{s.onload=resolve;s.onerror=reject;});}await new Promise(r=>{const tick=()=>window.turnstile?r():setTimeout(tick,30);tick();});if(turnstileWidget===null)turnstileWidget=window.turnstile.render(box,{sitekey:siteKey,theme:document.body.classList.contains('light-theme')?'light':'dark',callback:t=>captchaToken=t,'expired-callback':()=>captchaToken='','error-callback':()=>captchaToken=''});}
+function captchaRequired(){return Boolean(String(config.security?.turnstileSiteKey||'').trim());}
+function verifyCaptcha(){if(captchaRequired()&&!captchaToken){setMessage('Complete the bot verification first.','error');return false;}return true;}
+function resetCaptcha(){if(window.turnstile&&turnstileWidget!==null){try{window.turnstile.reset(turnstileWidget);}catch{}}captchaToken='';}
 
-  if (recovery) {
-    els.heading.textContent = 'Choose a new password';
-    els.subheading.textContent = 'Set a fresh password for your LinuxAid account.';
-  } else {
-    els.heading.textContent = create ? 'Create your free account' : 'Welcome back';
-    els.subheading.textContent = create
-      ? `Create a learner account${backendReady ? ` with ${backend.provider}` : ' in browser demo mode'}.`
-      : 'Sign in to sync your Linux learning journey across devices.';
-  }
+async function handleSubmit(event){event.preventDefault();if(busy)return;if(!backendReady)return setMessage('Supabase Auth is not connected.','error');if(!canAttempt())return setMessage('Too many attempts from this browser. Wait about 10 minutes.','error');if(!verifyCaptcha())return;setBusy(true);try{if(mode==='recovery'){const v=validPassword();if(v)throw new Error(v);await updatePassword(els.password.value);clearAttempts();setMessage('Password updated. Redirecting…','success');setTimeout(()=>location.href=next,700);return;}const email=els.email.value.trim(),password=els.password.value;if(!email||!password)throw new Error('Enter your email and password.');if(mode==='create'){const v=validPassword();if(v)throw new Error(v);const name=els.name.value.trim();if(name.length<2)throw new Error('Enter a display name.');const data=await signUpEmail(email,password,name,captchaToken);if(data.session){clearAttempts();setMessage('Account created. Redirecting…','success');setTimeout(()=>location.href=next,700);}else{setMessage('Account created. Check your email to verify it, then sign in.','success');setMode('signin');els.email.value=email;}}else{await signInEmail(email,password,captchaToken);clearAttempts();setMessage('Signed in successfully. Redirecting…','success');setTimeout(()=>location.href=next,600);}}catch(error){setMessage(friendly(error),'error');resetCaptcha();}finally{setBusy(false);}}
+async function handleGoogle(){if(config.auth?.googleEnabled!==true)return setMessage('Google sign-in is not enabled yet. Use email sign-in for now.','info');if(!verifyCaptcha())return;setBusy(true);try{await signInGoogle();}catch(error){setMessage(friendly(error),'error');setBusy(false);resetCaptcha();}}
+async function handleReset(){const email=els.email.value.trim();if(!email||!email.includes('@'))return setMessage('Enter your email first.','error');if(!verifyCaptcha())return;setBusy(true);try{await resetPassword(email,captchaToken);setMessage('Password reset email sent. Check inbox and spam.','success');resetCaptcha();}catch(error){setMessage(friendly(error),'error');resetCaptcha();}finally{setBusy(false);}}
+async function handleMagic(){const email=els.email.value.trim();if(!email||!email.includes('@'))return setMessage('Enter your email first.','error');if(!verifyCaptcha())return;setBusy(true);try{await signInMagicLink(email,captchaToken);setMessage('Sign-in link sent. Check your inbox.','success');resetCaptcha();}catch(error){setMessage(friendly(error),'error');resetCaptcha();}finally{setBusy(false);}}
+function enableDemo(){localStorage.setItem('linuxaid-auth','true');localStorage.setItem('linuxaid-demo-profile',JSON.stringify({displayName:els.name?.value.trim()||'LinuxAid Learner',createdAt:new Date().toISOString()}));setMessage('Demo mode enabled. Progress stays on this device.','info');setTimeout(()=>location.href=next,450);}
 
-  if (els.nameField) els.nameField.hidden = !create;
-  if (els.confirmField) els.confirmField.hidden = !(create || recovery);
-  const emailLabel = els.email?.closest('label');
-  if (emailLabel) emailLabel.hidden = recovery;
-  if (els.password) els.password.autocomplete = create || recovery ? 'new-password' : 'current-password';
-  if (els.submit) els.submit.textContent = recovery ? 'Update password' : create ? 'Create account' : 'Sign in';
-  if (els.forgot) els.forgot.hidden = create || recovery;
-  if (els.google) els.google.hidden = recovery;
-  if (els.demo) els.demo.hidden = recovery;
-  document.querySelector('.auth-divider')?.toggleAttribute('hidden', recovery);
-  document.querySelector('.auth-tabs')?.toggleAttribute('hidden', recovery);
+function addMagicButton(){if($('magicLink'))return;const b=document.createElement('button');b.className='button';b.id='magicLink';b.type='button';b.textContent='Email me a sign-in link';els.forgot?.parentElement?.insertBefore(b,els.demo||null);b.addEventListener('click',handleMagic);}
+function surfaceRedirectError(){const hash=new URLSearchParams(location.hash.replace(/^#/,''));const err=hash.get('error_description')||params.get('error_description');if(err)setMessage(decodeURIComponent(err),'error');}
 
-  document.querySelectorAll('[data-auth-tab]').forEach(button => {
-    const active = button.dataset.authTab === mode;
-    button.classList.toggle('active', active);
-    button.setAttribute('aria-selected', String(active));
-  });
-  setMessage('');
-}
-
-function friendlyError(error) {
-  const code = String(error?.code || error?.name || '').toLowerCase();
-  const message = String(error?.message || '');
-  if (code.includes('invalid-credential') || code.includes('invalid_login_credentials') || code.includes('wrong-password') || code.includes('user-not-found')) return 'Email or password is incorrect.';
-  if (code.includes('email-already-in-use') || message.toLowerCase().includes('already registered')) return 'That email already has an account. Try signing in instead.';
-  if (code.includes('weak-password') || message.toLowerCase().includes('password should')) return 'Use a stronger password with at least 8 characters.';
-  if (code.includes('invalid-email')) return 'Enter a valid email address.';
-  if (code.includes('popup-closed')) return 'Google sign-in was cancelled.';
-  if (code.includes('too-many-requests') || code.includes('rate')) return 'Too many attempts. Wait a little and try again.';
-  return message ? message.replace(/^Firebase:\s*/,'') : 'Something went wrong. Please try again.';
-}
-
-function validatePassword() {
-  const password = els.password?.value || '';
-  const confirm = els.confirm?.value || '';
-  if (password.length < 8) return 'Use at least 8 characters for your password.';
-  if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) return 'Use both letters and numbers in your password.';
-  if (password !== confirm) return 'The passwords do not match.';
-  return '';
-}
-
-function validateCreate() {
-  const name = els.name?.value.trim() || '';
-  const email = els.email?.value.trim() || '';
-  if (name.length < 2) return 'Enter a display name with at least 2 characters.';
-  if (!email.includes('@')) return 'Enter a valid email address.';
-  return validatePassword();
-}
-
-function setBusy(value) {
-  busy = value;
-  [els.submit, els.google, els.forgot, els.demo].forEach(button => { if (button) button.disabled = value; });
-  if (els.submit) els.submit.textContent = value ? 'Please wait…' : (mode === 'recovery' ? 'Update password' : mode === 'create' ? 'Create account' : 'Sign in');
-}
-
-async function handleSubmit(event) {
-  event.preventDefault();
-  if (busy) return;
-
-  if (mode === 'recovery') {
-    const validation = validatePassword();
-    if (validation) return setMessage(validation, 'error');
-    if (!backendReady) return setMessage('Connect the Supabase backend before using password recovery.', 'error');
-    setBusy(true);
-    try {
-      await updatePasswordClient(els.password.value);
-      setMessage('Password updated successfully. Redirecting…', 'success');
-      setTimeout(() => location.href = 'dashboard.html', 800);
-    } catch (error) {
-      setMessage(friendlyError(error), 'error');
-    } finally { setBusy(false); }
-    return;
-  }
-
-  const email = els.email.value.trim();
-  const password = els.password.value;
-  if (!email || !password) return setMessage('Enter your email and password.', 'error');
-
-  if (!backendReady) {
-    const validation = mode === 'create' ? validateCreate() : '';
-    if (validation) return setMessage(validation, 'error');
-    return enableDemo(els.name.value.trim() || email.split('@')[0] || 'LinuxAid Learner');
-  }
-
-  if (mode === 'create') {
-    const validation = validateCreate();
-    if (validation) return setMessage(validation, 'error');
-  }
-
-  setBusy(true);
-  try {
-    if (mode === 'create') {
-      await createAccountWithEmailClient(email, password, els.name.value.trim());
-      const active = await getCurrentUser();
-      if (active) {
-        setMessage('Account created and signed in. Redirecting…', 'success');
-        setTimeout(() => location.href = 'dashboard.html', 750);
-      } else {
-        setMessage('Account created. Check your inbox to verify your email, then sign in.', 'success');
-        setMode('signin');
-        els.email.value = email;
-      }
-    } else {
-      await signInWithEmailClient(email, password);
-      setMessage('Signed in successfully. Redirecting…', 'success');
-      setTimeout(() => location.href = 'dashboard.html', 650);
-    }
-  } catch (error) {
-    setMessage(friendlyError(error), 'error');
-  } finally { setBusy(false); }
-}
-
-async function handleGoogle() {
-  if (busy) return;
-  if (!backendReady) return enableDemo('LinuxAid Learner');
-  setBusy(true);
-  try {
-    await signInWithGoogleClient();
-    // Supabase OAuth navigates away. Firebase returns here after popup sign-in.
-    if (backend.provider === 'firebase') {
-      setMessage('Google sign-in successful. Redirecting…', 'success');
-      setTimeout(() => location.href = 'dashboard.html', 500);
-    }
-  } catch (error) {
-    setMessage(friendlyError(error), 'error');
-    setBusy(false);
-  }
-}
-
-async function handleReset() {
-  const email = els.email.value.trim();
-  if (!email || !email.includes('@')) return setMessage('Enter your email first, then select “Forgot password?”.', 'error');
-  if (!backendReady) return setMessage('Password reset becomes available when Supabase or Firebase is configured.', 'info');
-  setBusy(true);
-  try {
-    await sendPasswordResetClient(email);
-    setMessage('Password reset email sent. Check your inbox and spam folder.', 'success');
-  } catch (error) {
-    setMessage(friendlyError(error), 'error');
-  } finally { setBusy(false); }
-}
-
-function enableDemo(name='LinuxAid Learner') {
-  localStorage.setItem('linuxaid-auth','true');
-  localStorage.setItem('linuxaid-demo-profile', JSON.stringify({ displayName:name, createdAt:new Date().toISOString() }));
-  setMessage('Browser demo mode enabled. Your progress stays on this device.', 'info');
-  setTimeout(() => location.href = 'dashboard.html', 600);
-}
-
-document.querySelectorAll('[data-auth-tab]').forEach(button => button.addEventListener('click', () => setMode(button.dataset.authTab)));
-els.form?.addEventListener('submit', handleSubmit);
-els.google?.addEventListener('click', handleGoogle);
-els.forgot?.addEventListener('click', handleReset);
-els.demo?.addEventListener('click', () => enableDemo(els.name?.value.trim() || 'LinuxAid Learner'));
-els.togglePassword?.addEventListener('click', () => {
-  const show = els.password.type === 'password';
-  els.password.type = show ? 'text' : 'password';
-  els.togglePassword.innerHTML = `<i class="fas ${show ? 'fa-eye-slash' : 'fa-eye'}"></i>`;
-  els.togglePassword.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
-});
-
-if (backendReady) {
-  onAuthStateChangedListener(user => {
-    if (user && mode !== 'recovery') setMessage(`Signed in as ${user.displayName || user.email || 'LinuxAid learner'}.`, 'success');
-  });
-} else {
-  setMessage('Backend not configured yet. You can still use LinuxAid in browser-only demo mode.', 'info');
-}
-
-if (params.get('verified') === '1') setMessage('Email verification complete. You can continue to LinuxAid.', 'success');
-setMode(mode);
+try{await exchangeCodeIfPresent();}catch(error){setMessage(friendly(error),'error');}
+addMagicButton();await ensureTurnstile().catch(()=>setMessage('Bot verification could not load. Check your connection and retry.','info'));
+document.querySelectorAll('[data-auth-tab]').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.authTab)));
+els.form?.addEventListener('submit',handleSubmit);els.google?.addEventListener('click',handleGoogle);els.forgot?.addEventListener('click',handleReset);els.demo?.addEventListener('click',enableDemo);els.togglePassword?.addEventListener('click',()=>{const show=els.password.type==='password';els.password.type=show?'text':'password';els.togglePassword.innerHTML=`<i class="fas ${show?'fa-eye-slash':'fa-eye'}"></i>`;});
+const active=await getSessionUser().catch(()=>null);if(active&&mode!=='recovery')setMessage(`Signed in as ${active.user_metadata?.display_name||active.email||'LinuxAid learner'}.`,'success');
+if(!backendReady)setMessage('Supabase Auth is unavailable. Demo mode is still available.','info');surfaceRedirectError();if(params.get('verified')==='1')setMessage('Email verified. You can sign in now.','success');setMode(mode);
