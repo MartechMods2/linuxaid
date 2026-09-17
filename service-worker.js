@@ -9,21 +9,26 @@ const APP_SHELL = [
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE_NAME).then(cache=>Promise.allSettled(APP_SHELL.map(url=>cache.add(url)))).then(()=>self.skipWaiting()));
 });
-
 self.addEventListener('activate',event=>{
   event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE_NAME).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));
 });
 
+function isHostOrSubdomain(host,domain){return host===domain||host.endsWith(`.${domain}`);}
 function shouldBypass(url){
-  return url.pathname.includes('/api/') || url.hostname.includes('googleapis.com') || url.hostname.includes('firebase') || url.hostname.includes('supabase.co') || url.hostname.includes('posthog') || url.hostname.includes('cloudflare.com');
+  const host=url.hostname.toLowerCase();
+  return url.pathname.startsWith('/api/') ||
+    isHostOrSubdomain(host,'googleapis.com') ||
+    isHostOrSubdomain(host,'firebaseio.com') ||
+    isHostOrSubdomain(host,'firebaseapp.com') ||
+    isHostOrSubdomain(host,'supabase.co') ||
+    isHostOrSubdomain(host,'posthog.com') ||
+    isHostOrSubdomain(host,'cloudflare.com');
 }
 
 self.addEventListener('fetch',event=>{
   const request=event.request;if(request.method!=='GET')return;
   const url=new URL(request.url);if(shouldBypass(url))return;
-
-  // Navigation and code/styles are network-first so phones do not get stuck on a stale layout.
-  const freshFirst=request.mode==='navigate' || (url.origin===self.location.origin && /\.(?:js|css|html|webmanifest)$/.test(url.pathname));
+  const freshFirst=request.mode==='navigate'||(url.origin===self.location.origin&&/\.(?:js|css|html|webmanifest)$/.test(url.pathname));
   if(freshFirst){
     event.respondWith(fetch(request).then(response=>{
       if(response.ok){const copy=response.clone();caches.open(CACHE_NAME).then(cache=>cache.put(request,copy));}
@@ -31,7 +36,6 @@ self.addEventListener('fetch',event=>{
     }).catch(async()=> (await caches.match(request)) || (request.mode==='navigate' ? caches.match('./offline.html') : Response.error())));
     return;
   }
-
   event.respondWith(caches.match(request).then(cached=>cached||fetch(request).then(response=>{
     if(response.ok&&url.origin===self.location.origin){const copy=response.clone();caches.open(CACHE_NAME).then(cache=>cache.put(request,copy));}
     return response;
