@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
+const read=p=>fs.readFileSync(new URL(`../${p}`,import.meta.url),'utf8');
+test('community uses live v7 social client',()=>{const html=read('community.html');assert.match(html,/communityV7\.js/);assert.match(html,/people\.html/);assert.match(html,/messages\.html/);assert.doesNotMatch(html,/Firebase is configured|preview mode/i)});
+test('people and messages surfaces exist',()=>{for(const p of ['people.html','messages.html','js/socialApi.js','js/peoplePageV7.js','js/messagesPageV7.js','social-v7.css'])assert.ok(fs.existsSync(new URL(`../${p}`,import.meta.url)),p)});
+test('social api uses protected Supabase tables and conversation RPC',()=>{const js=read('js/socialApi.js');for(const term of ['follows','community_reactions','community_bookmarks','content_reports','messages','linuxaid_start_direct_conversation'])assert.match(js,new RegExp(term))});
+test('homepage no longer advertises courses or certificates',()=>{const html=read('index.html');assert.doesNotMatch(html,/certificate|courses\.html|Courses & quizzes/i);assert.match(html,/Community is no longer a preview/)});
+test('service worker keeps backend traffic out of cache',()=>{const sw=read('service-worker.js');assert.match(sw,/supabase\.co/);assert.match(sw,/posthog/);assert.match(sw,/linuxaid-v7/)});
