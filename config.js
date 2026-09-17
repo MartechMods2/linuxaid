@@ -1,7 +1,6 @@
-// Public runtime configuration for the static LinuxAid site.
-// Supabase project URLs and publishable keys are browser-safe identifiers.
-// Security is enforced with Row Level Security (RLS). Never put service_role,
-// OpenAI, Gemini, Resend or other secret server keys in this file.
+// Public runtime configuration for LinuxAid.
+// Only browser-safe public identifiers belong here. Never place service-role,
+// AI provider secrets, OAuth client secrets or CAPTCHA secret keys in this file.
 window.LINUXAID_CONFIG = {
   backendProvider: 'supabase',
   backend: {
@@ -13,11 +12,28 @@ window.LINUXAID_CONFIG = {
     },
     firebase: null
   },
+  auth: {
+    emailEnabled: true,
+    googleEnabled: false,
+    magicLinkEnabled: true,
+    requireEmailVerification: true,
+    // Turn this on only after Google OAuth is configured in Supabase.
+    providerLabel: 'Supabase Auth'
+  },
+  security: {
+    // Paste only the PUBLIC Turnstile site key here after creating a widget.
+    // Put the Turnstile SECRET in Supabase Auth > Bot and Abuse Protection.
+    turnstileSiteKey: '',
+    authTimeoutMs: 15000,
+    maxAuthAttemptsPerWindow: 6,
+    authAttemptWindowMs: 10 * 60 * 1000
+  },
   ai: {
     proxyUrl: '',
     edgeFunction: 'linuxaid-ai',
     provider: 'server',
-    allowInsecureBrowserAI: false
+    allowInsecureBrowserAI: false,
+    requestTimeoutMs: 25000
   },
   analytics: {
     provider: 'posthog',
@@ -32,6 +48,7 @@ window.LINUXAID_CONFIG = {
     website: 'https://martechmods2.github.io/linuxaid/'
   }
 };
+
 window.LINUXAID_CONFIG.firebase = window.LINUXAID_CONFIG.backend.firebase;
 
 Promise.all([
@@ -42,7 +59,8 @@ Promise.all([
   import('./js/sync.js'),
   import('./js/consent.js'),
   import('./js/terminalDock.js'),
-  import('./js/brand.js')
+  import('./js/brand.js'),
+  import('./js/runtimeV5.js')
 ]).then(modules => {
   const brand = modules[7];
   brand?.applyLinuxAidBranding?.();
@@ -53,6 +71,4 @@ Promise.all([
   document.querySelectorAll('[data-open-terminal],#openTerminalPrimary').forEach(button => {
     button.addEventListener('click', () => document.dispatchEvent(new CustomEvent('linuxaid:open-terminal')));
   });
-}).catch(error => {
-  console.warn('LinuxAid shared product runtime could not be loaded:', error);
-});
+}).catch(error => console.warn('LinuxAid shared runtime could not be loaded:', error));
