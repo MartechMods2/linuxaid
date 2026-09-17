@@ -59,7 +59,8 @@ Promise.all([
   import('./js/consent.js'),
   import('./js/terminalDock.js'),
   import('./js/brand.js'),
-  import('./js/runtimeV5.js')
+  import('./js/runtimeV5.js'),
+  import('./js/v8Enhancements.js')
 ]).then(modules => {
   const brand = modules[7];
   brand?.applyLinuxAidBranding?.();
