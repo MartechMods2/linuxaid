@@ -20,10 +20,10 @@ test('auth client uses Supabase and supports captcha tokens',()=>{
   assert.match(js,/resetPasswordForEmail/);
 });
 
-test('public config never embeds server secrets and exposes Turnstile site-key slot',()=>{
+test('public config exposes only browser-safe Turnstile key and never server secrets',()=>{
   const cfg=read('config.js');
-  assert.match(cfg,/turnstileSiteKey:\s*''/);
-  assert.doesNotMatch(cfg,/serviceRole|service_role|OPENAI_API_KEY\s*:/);
+  assert.match(cfg,/turnstileSiteKey:\s*['"][^'"]+['"]/);
+  assert.doesNotMatch(cfg,/turnstileSecret|CLOUDFLARE_SECRET|serviceRole|service_role|OPENAI_API_KEY\s*:|GEMINI_API_KEY\s*:/i);
   assert.match(cfg,/maxAuthAttemptsPerWindow/);
 });
 
