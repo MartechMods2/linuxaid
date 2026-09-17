@@ -3,13 +3,17 @@ function ready(fn) {
   else fn();
 }
 
+function addNavLink(nav, href, label) {
+  if ([...nav.querySelectorAll('a')].some(link => link.getAttribute('href') === href)) return;
+  const link = document.createElement('a');
+  link.href = href;
+  link.textContent = label;
+  nav.appendChild(link);
+}
+
 ready(() => {
   document.querySelectorAll('.nav-links').forEach(nav => {
-    if (![...nav.querySelectorAll('a')].some(link => link.getAttribute('href') === 'community.html')) {
-      const link = document.createElement('a');
-      link.href = 'community.html';
-      link.textContent = 'Community';
-      nav.appendChild(link);
-    }
+    addNavLink(nav, 'community.html', 'Community');
+    addNavLink(nav, 'install.html', 'Install Linux');
   });
 });
