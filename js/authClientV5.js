@@ -5,7 +5,7 @@ let clientPromise=null;
 export function isSupabaseAuthReady(){return Boolean(source.url&&(source.publishableKey||source.anonKey));}
 
 export async function getAuthClient(){
-  if(!isSupabaseAuthReady()) throw new Error('Supabase Auth is not configured.');
+  if(!isSupabaseAuthReady()) throw new Error('LinuxAid account service is not configured.');
   if(!clientPromise){
     clientPromise=import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm').then(({createClient})=>createClient(source.url,source.publishableKey||source.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'pkce'},global:{headers:{'X-Client-Info':'linuxaid-auth-v5'}}}));
   }

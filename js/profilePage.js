@@ -81,7 +81,7 @@ function renderIdentity(profile={}) {
   const email=currentUser?.email || profile.email || '';
   const avatar=profile.avatarUrl || currentUser?.avatarUrl || local.avatarUrl || '';
   $('profileName').textContent=name;
-  $('profileIdentity').textContent=email || (backendReady ? `${backend.provider} profile` : 'Browser-only profile');
+  $('profileIdentity').textContent=email || (backendReady ? 'LinuxAid synced account' : 'Browser-only profile');
   const orb=$('profileAvatar');
   if (orb) {
     orb.textContent=avatar ? '' : (name.trim()[0] || 'L').toUpperCase();
@@ -100,7 +100,7 @@ async function handleAuth(user) {
     try {
       const remote=await loadUserProfile(user.uid);
       renderIdentity(remote || {});
-      $('accountAction').textContent=`Account active • ${backend.provider}`;
+      $('accountAction').textContent='Account active';
       $('accountAction').href='auth.html';
     } catch(error) {
       console.error(error); renderIdentity(localProfile());
@@ -114,12 +114,7 @@ async function handleAuth(user) {
 
 $('profileForm')?.addEventListener('submit',async event=>{
   event.preventDefault();
-  const profile={
-    displayName:$('profileDisplayName').value.trim(),
-    distro:$('profileDistro').value,
-    learningGoal:$('profileGoal').value.trim(),
-    avatarUrl:localProfile().avatarUrl || ''
-  };
+  const profile={ displayName:$('profileDisplayName').value.trim(), distro:$('profileDistro').value, learningGoal:$('profileGoal').value.trim(), avatarUrl:localProfile().avatarUrl || '' };
   saveLocalProfile(profile);
   if (backendReady && currentUser) {
     try { await saveUserProfile(currentUser.uid,profile); }
@@ -132,19 +127,24 @@ $('profileForm')?.addEventListener('submit',async event=>{
 $('avatarUpload')?.addEventListener('change',async event=>{
   const file=event.target.files?.[0]; if (!file) return;
   const status=$('avatarStatus');
-  if (!backendReady || backend.provider !== 'supabase' || !currentUser) {
-    if (status) status.textContent='Sign in with Supabase to sync an avatar.';
+  if (!backendReady || !currentUser) {
+    if (status) status.textContent='Sign in to sync a profile picture.';
     return;
   }
-  if (status) status.textContent='Uploading…';
+  if (file.size > 2 * 1024 * 1024) {
+    if (status) status.textContent='That image is larger than 2 MB.';
+    event.target.value='';
+    return;
+  }
+  if (status) status.textContent='Uploading image…';
   try {
     const url=await uploadAvatar(file);
     saveLocalProfile({ avatarUrl:url });
     const profile=await loadUserProfile(currentUser.uid) || { avatarUrl:url };
     renderIdentity(profile);
-    if (status) status.textContent='Avatar updated ✓';
+    if (status) status.textContent='Profile picture updated ✓';
   } catch(error) {
-    if (status) status.textContent=error.message || 'Avatar upload failed.';
+    if (status) status.textContent=error.message || 'Image upload failed.';
   } finally { event.target.value=''; }
 });
 
@@ -180,14 +180,21 @@ if (analyticsToggle) {
   analyticsToggle.addEventListener('change',()=>setAnalyticsOptOut(!analyticsToggle.checked));
 }
 
-document.addEventListener('linuxaid:state-synced',event=>{
+const coffee=$('supportCoffee');
+if (coffee && config?.product?.supportUrl) {
+  coffee.href=config.product.supportUrl;
+  coffee.target='_blank';
+  coffee.rel='noopener noreferrer';
+}
+
+document.addEventListener('linuxaid:state-synced',()=>{
   renderProgress();
   const status=$('syncStatus');
-  if (status) status.textContent=`Synced with ${backend.provider} ✓`;
+  if (status) status.textContent='Synced securely ✓';
 });
 document.addEventListener('linuxaid:sync-status',event=>{
   const status=$('syncStatus'); if (!status) return;
-  status.textContent=event.detail?.status === 'synced' ? `Synced with ${backend.provider} ✓` : `Sync issue: ${event.detail?.message || 'try again later'}`;
+  status.textContent=event.detail?.status === 'synced' ? 'Synced securely ✓' : `Sync issue: ${event.detail?.message || 'try again later'}`;
 });
 
 renderProgress();
