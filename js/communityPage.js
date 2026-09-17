@@ -1,142 +1,44 @@
 import {
-  initBackend, getBackendStatus, onAuthStateChangedListener, loadCommunityPosts,
-  saveCommunityPost, toggleCommunityVote, loadCommunityReplies, saveCommunityReply
+  initBackend,getBackendStatus,onAuthStateChangedListener,getBackendClient,loadUserProfile,
+  loadCommunityPosts,saveCommunityPost,toggleCommunityVote,loadCommunityReplies,saveCommunityReply,
+  toggleBookmark,loadBookmarkedPostIds,setPostReaction,loadMyReactions,loadFollowingIds,
+  loadPublicProfiles,reportContent,subscribeToTable
 } from '../backend.js';
 
-const config = window.LINUXAID_CONFIG || {};
-await initBackend(config);
-const backend = getBackendStatus();
-const backendReady = backend.ready;
-let currentUser = backend.user || null;
+const config=window.LINUXAID_CONFIG||{};await initBackend(config);let currentUser=getBackendStatus().user||null;
+const $=id=>document.getElementById(id);let feedMode='latest',allPosts=[],bookmarks=new Set(),myReactions=new Map(),profileMap=new Map(),following=new Set(),stopFeed=()=>{};
+const escAvatar=(profile,name='L')=>{const wrap=document.createElement('div');wrap.className='avatar-sm';if(profile?.avatarUrl){const img=document.createElement('img');img.src=profile.avatarUrl;img.alt='';wrap.appendChild(img);}else wrap.textContent=(name||'L').trim()[0]?.toUpperCase()||'L';return wrap;};
+const relativeTime=value=>{const diff=Date.now()-new Date(value).getTime();const m=Math.max(1,Math.floor(diff/60000));if(m<60)return`${m}m`;const h=Math.floor(m/60);if(h<24)return`${h}h`;const d=Math.floor(h/24);if(d<30)return`${d}d`;return new Date(value).toLocaleDateString();};
 
-const $ = id => document.getElementById(id);
-const SAMPLE_POSTS = [
-  { id:'sample-1', title:'How should I investigate “Permission denied” safely?', body:'I learned to start with ls -l, id and the target path instead of immediately using sudo. What other checks do you use?', meta:'LinuxAid starter discussion', replies:0, upvotes:0, sample:true },
-  { id:'sample-2', title:'Best command sequence for basic network troubleshooting?', body:'My current order is ip addr → ip route → ping an IP → test DNS. I want to understand why this order works.', meta:'Networking discussion', replies:0, upvotes:0, sample:true },
-  { id:'sample-3', title:'What should a beginner learn after files and permissions?', body:'I am comfortable with pwd, ls, cd, cp, mv, grep and chmod. Should I learn processes, networking or Bash next?', meta:'Learning roadmap', replies:0, upvotes:0, sample:true }
-];
+async function hydrateProfiles(posts){const ids=[...new Set(posts.map(p=>p.authorId).filter(Boolean))];if(!ids.length)return;const client=getBackendClient();const{data,error}=await client.from('profiles').select('id,display_name,username,headline,avatar_url,distro,follower_count,following_count,post_count').in('id',ids);if(error)throw error;(data||[]).forEach(p=>profileMap.set(p.id,{id:p.id,displayName:p.display_name||'LinuxAid learner',username:p.username||'',headline:p.headline||'',avatarUrl:p.avatar_url||'',distro:p.distro||'',followerCount:Number(p.follower_count||0),followingCount:Number(p.following_count||0),postCount:Number(p.post_count||0)}));}
 
-function setNotice(text, type='info') {
-  const notice=$('communityAuthNotice');
-  if (!notice) return;
-  notice.textContent=text;
-  notice.className=`auth-message ${type} show`;
-}
+function notice(text){const n=$('communityAuthNotice');if(n)n.textContent=text;}
+function reactionTotal(post){return Object.values(post.reactionCounts||{}).reduce((a,b)=>a+Number(b||0),0);}
 
-async function openReplies(post) {
-  if (post.sample || backend.provider !== 'supabase') return setNotice('Replies become interactive when the Supabase backend is configured.', 'info');
-  let dialog=document.getElementById('communityReplyDialog');
-  if (!dialog) {
-    dialog=document.createElement('dialog');
-    dialog.id='communityReplyDialog';
-    dialog.className='auth-card';
-    dialog.style.cssText='width:min(680px,calc(100% - 30px));max-height:82vh;overflow:auto;border:1px solid var(--hairline);background:var(--surface-1);color:var(--text)';
-    document.body.appendChild(dialog);
-  }
-  dialog.replaceChildren();
-  const close=document.createElement('button'); close.className='button'; close.type='button'; close.textContent='Close'; close.addEventListener('click',()=>dialog.close());
-  const h=document.createElement('h2'); h.textContent=post.title;
-  const list=document.createElement('div'); list.style.cssText='display:grid;gap:10px;margin:18px 0';
-  list.textContent='Loading replies…';
-  const form=document.createElement('form'); form.className='auth-form-grid';
-  const input=document.createElement('textarea'); input.className='form-control'; input.rows=4; input.maxLength=5000; input.placeholder='Add a helpful reply…';
-  const submit=document.createElement('button'); submit.className='button primary'; submit.type='submit'; submit.textContent='Reply';
-  form.append(input,submit);
-  dialog.append(close,h,list,form);
-  dialog.showModal();
+async function openReplies(post){let dialog=$('communityReplyDialog');if(!dialog){dialog=document.createElement('dialog');dialog.id='communityReplyDialog';dialog.className='auth-card';dialog.style.cssText='width:min(760px,calc(100% - 22px));max-height:88dvh;overflow:auto;border:1px solid var(--la-border);background:var(--la-surface);color:var(--la-text)';document.body.appendChild(dialog);}dialog.replaceChildren();const top=document.createElement('div');top.style.cssText='display:flex;justify-content:space-between;gap:12px;align-items:start';const h=document.createElement('div');const title=document.createElement('h2');title.textContent=post.title;title.style.margin='0 0 6px';const sub=document.createElement('div');sub.style.color='var(--la-muted)';sub.textContent=`${post.authorName} • ${relativeTime(post.createdAt)}`;h.append(title,sub);const close=document.createElement('button');close.className='button icon-button';close.innerHTML='<i class="fas fa-xmark"></i>';close.onclick=()=>dialog.close();top.append(h,close);const list=document.createElement('div');list.style.cssText='display:grid;gap:9px;margin:18px 0';const form=document.createElement('form');form.className='message-composer';const input=document.createElement('textarea');input.className='form-control';input.rows=2;input.maxLength=5000;input.placeholder=currentUser?'Add a useful reply…':'Sign in to reply';input.disabled=!currentUser;const send=document.createElement('button');send.className='button primary';send.type='submit';send.textContent='Reply';send.disabled=!currentUser;form.append(input,send);dialog.append(top,list,form);dialog.showModal();
+  let stop=()=>{};const render=async()=>{const replies=await loadCommunityReplies(post.id);list.replaceChildren();if(!replies.length){const e=document.createElement('div');e.className='empty-state';e.textContent='No replies yet. Be the first to add something useful.';list.appendChild(e);}for(const reply of replies){const row=document.createElement('div');row.className='panel';row.style.padding='13px';const meta=document.createElement('small');meta.style.color='var(--la-muted)';meta.textContent=`${reply.displayName} • ${relativeTime(reply.createdAt)}`;const body=document.createElement('p');body.textContent=reply.body;body.style.margin='6px 0 0';const actions=document.createElement('div');actions.style.cssText='display:flex;gap:6px;margin-top:7px';const report=document.createElement('button');report.className='post-action';report.textContent='Report';report.onclick=async()=>{if(!currentUser)return location.href='auth.html?next=community';const reason=prompt('Briefly describe the problem with this reply:');if(reason?.trim().length>=3){await reportContent('reply',reply.id,reason.trim());report.textContent='Reported ✓';}};actions.append(report);row.append(meta,body,actions);list.appendChild(row);}};
+  form.onsubmit=async e=>{e.preventDefault();const body=input.value.trim();if(body.length<2)return;send.disabled=true;try{await saveCommunityReply(post.id,body);input.value='';await render();}catch(err){alert(err.message||'Could not reply.');}finally{send.disabled=false;}};
+  try{await render();stop=subscribeToTable('community_replies',render,`post_id=eq.${post.id}`);}catch(err){list.textContent=err.message||'Could not load replies.';}dialog.addEventListener('close',()=>stop(),{once:true});}
 
-  async function renderReplies() {
-    const replies=await loadCommunityReplies(post.id);
-    list.replaceChildren();
-    if (!replies.length) {
-      const empty=document.createElement('p'); empty.style.color='var(--muted)'; empty.textContent='No replies yet. Be the first to help.'; list.appendChild(empty); return;
-    }
-    replies.forEach(reply=>{
-      const item=document.createElement('div'); item.className='panel glass'; item.style.padding='14px';
-      const meta=document.createElement('small'); meta.style.color='var(--muted)'; meta.textContent=`${reply.displayName} • ${new Date(reply.createdAt).toLocaleString()}`;
-      const body=document.createElement('p'); body.style.margin='8px 0 0'; body.textContent=reply.body;
-      item.append(meta,body); list.appendChild(item);
-    });
-  }
+function buildPost(post){const card=document.createElement('article');card.className='community-card';const profile=profileMap.get(post.authorId);const head=document.createElement('div');head.className='post-head';head.appendChild(escAvatar(profile,post.authorName));const meta=document.createElement('div');meta.className='post-meta';const name=document.createElement('strong');name.textContent=profile?.displayName||post.authorName;const details=document.createElement('span');details.textContent=`${profile?.username?'@'+profile.username+' • ':''}${profile?.distro?profile.distro+' • ':''}${relativeTime(post.createdAt)}`;meta.append(name,details);head.appendChild(meta);if(post.isSolved){const solved=document.createElement('span');solved.className='chip';solved.textContent='Solved';solved.style.color='var(--la-green)';head.appendChild(solved);}const title=document.createElement('h3');title.className='post-title';title.textContent=post.title;const body=document.createElement('div');body.className='post-body';body.textContent=post.body;card.append(head,title,body);
+  if(post.tags.length){const tags=document.createElement('div');tags.className='post-tags';post.tags.forEach(t=>{const c=document.createElement('span');c.className='chip';c.textContent='#'+t;tags.appendChild(c);});card.appendChild(tags);}
+  const reactions=document.createElement('div');reactions.className='reaction-menu';[['like','👍'],['helpful','🛠️'],['insightful','💡'],['solved','✅']].forEach(([key,emoji])=>{const b=document.createElement('button');b.className='reaction-button'+(myReactions.get(post.id)===key?' active':'');b.type='button';b.textContent=`${emoji} ${Number(post.reactionCounts?.[key]||0)}`;b.onclick=async()=>{if(!currentUser)return location.href='auth.html?next=community';b.disabled=true;try{await setPostReaction(post.id,key);await refreshFeed(false);}finally{b.disabled=false;}};reactions.appendChild(b);});card.appendChild(reactions);
+  const actions=document.createElement('div');actions.className='post-actions';const make=(icon,text,fn,active=false)=>{const b=document.createElement('button');b.className='post-action'+(active?' active':'');b.innerHTML=`<i class="fas ${icon}"></i> ${text}`;b.onclick=fn;return b;};actions.append(
+    make('fa-arrow-up',String(post.upvotes),async()=>{if(!currentUser)return location.href='auth.html?next=community';await toggleCommunityVote(post.id);await refreshFeed(false);}),
+    make('fa-comment',`${post.replies} replies`,()=>openReplies(post)),
+    make('fa-bookmark',bookmarks.has(post.id)?'Saved':`Save ${post.bookmarks||''}`,async()=>{if(!currentUser)return location.href='auth.html?next=community';await toggleBookmark(post.id);await refreshFeed(false);},bookmarks.has(post.id)),
+    make('fa-user',profile?.username?'@'+profile.username:'Profile',()=>location.href=`people.html?profile=${encodeURIComponent(post.authorId)}`)
+  );
+  if(currentUser?.uid===post.authorId){actions.appendChild(make('fa-circle-check',post.isSolved?'Reopen':'Mark solved',async()=>{const{updateCommunityPost}=await import('../backend.js');await updateCommunityPost(post.id,{isSolved:!post.isSolved});await refreshFeed(false);}));}else actions.appendChild(make('fa-flag','Report',async()=>{if(!currentUser)return location.href='auth.html?next=community';const reason=prompt('Why are you reporting this post?');if(reason?.trim().length>=3){await reportContent('post',post.id,reason.trim());alert('Report submitted.');}}));card.appendChild(actions);return card;}
 
-  form.addEventListener('submit',async event=>{
-    event.preventDefault();
-    const body=input.value.trim();
-    if (body.length < 2) return;
-    if (!currentUser) { dialog.close(); location.href='auth.html'; return; }
-    submit.disabled=true; submit.textContent='Posting…';
-    try { await saveCommunityReply(post.id,body); input.value=''; await renderReplies(); await renderFeed(); }
-    catch(error){ setNotice(error.message || 'Could not add reply.','error'); }
-    finally{ submit.disabled=false; submit.textContent='Reply'; }
-  });
+async function refreshFeed(showLoading=true){const feed=$('communityFeed'),empty=$('communityEmpty');if(!feed)return;if(showLoading)feed.innerHTML='<div class="empty-state">Loading live discussions…</div>';try{bookmarks=currentUser?await loadBookmarkedPostIds():new Set();following=currentUser?await loadFollowingIds():new Set();let posts=feedMode==='bookmarks'?await loadCommunityPosts({bookmarked:true,limit:50}):await loadCommunityPosts({limit:50});if(feedMode==='following')posts=posts.filter(p=>following.has(p.authorId));const q=($('communitySearch')?.value||'').toLowerCase().trim();if(q)posts=posts.filter(p=>`${p.title} ${p.body} ${p.tags.join(' ')}`.toLowerCase().includes(q));allPosts=posts;await hydrateProfiles(posts);myReactions=currentUser?await loadMyReactions(posts.map(p=>p.id)):new Map();feed.replaceChildren();posts.forEach(p=>feed.appendChild(buildPost(p)));empty.hidden=posts.length>0;const totalReplies=posts.reduce((s,p)=>s+p.replies,0),totalReactions=posts.reduce((s,p)=>s+reactionTotal(p),0);$('communityPulse').textContent=`${posts.length} discussions in this view • ${totalReplies} replies • ${totalReactions} reactions`; }catch(error){console.error(error);feed.innerHTML='';empty.hidden=false;empty.querySelector('p').textContent=error.message||'Could not load the live community.';}}
 
-  try { await renderReplies(); }
-  catch(error){ list.textContent=error.message || 'Could not load replies.'; }
-}
+async function loadSuggestedPeople(){const root=$('communityPeople');if(!root)return;try{const people=(await loadPublicProfiles({limit:5})).filter(p=>p.id!==currentUser?.uid).slice(0,4);root.replaceChildren();people.forEach(p=>{const row=document.createElement('a');row.href=`people.html?profile=${encodeURIComponent(p.id)}`;row.style.cssText='display:flex;gap:9px;align-items:center;text-decoration:none';row.appendChild(escAvatar(p,p.displayName));const copy=document.createElement('div');copy.style.minWidth='0';const strong=document.createElement('strong');strong.textContent=p.displayName;const sub=document.createElement('div');sub.style.cssText='color:var(--la-muted);font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';sub.textContent=p.headline||p.distro||`${p.followerCount} followers`;copy.append(strong,sub);row.appendChild(copy);root.appendChild(row);});}catch{root.textContent='People discovery is temporarily unavailable.';}}
 
-function cardForPost(post) {
-  const card=document.createElement('article');
-  card.className='community-card glass';
-  const title=document.createElement('h3'); title.textContent=String(post.title || 'Community post').slice(0,160);
-  const meta=document.createElement('div'); meta.className='meta'; meta.textContent=String(post.meta || 'LinuxAid Community').slice(0,180);
-  const body=document.createElement('p'); body.textContent=String(post.body || '').slice(0,8000);
-  const actions=document.createElement('div'); actions.className='community-actions';
+$('communityForm')?.addEventListener('submit',async e=>{e.preventDefault();if(!currentUser)return location.href='auth.html?next=community';const title=$('communityTitle').value.trim(),body=$('communityBody').value.trim(),tags=$('communityTags').value.split(',').map(x=>x.trim()).filter(Boolean);if(title.length<8||body.length<20)return notice('Use a clear title and enough detail for someone to understand the problem.');const b=e.submitter;b.disabled=true;b.textContent='Publishing…';try{await saveCommunityPost({title,body,tags});$('communityTitle').value='';$('communityBody').value='';$('communityTags').value='';await refreshFeed(false);notice('Published to the live LinuxAid community ✓');}catch(err){notice(err.message||'Could not publish.');}finally{b.disabled=false;b.innerHTML='<i class="fas fa-paper-plane"></i> Publish';}});
+$('communitySearch')?.addEventListener('input',()=>refreshFeed(false));$('refreshCommunity')?.addEventListener('click',()=>refreshFeed());document.querySelectorAll('[data-feed-filter]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-feed-filter]').forEach(x=>x.classList.remove('active'));b.classList.add('active');feedMode=b.dataset.feedFilter;refreshFeed();}));
 
-  const reply=document.createElement('button'); reply.className='community-pill'; reply.type='button'; reply.textContent=`${Number(post.replies || 0)} replies`;
-  reply.addEventListener('click',()=>openReplies(post));
+onAuthStateChangedListener(async user=>{currentUser=user||null;const p=currentUser?await loadUserProfile(currentUser.uid).catch(()=>null):null;const avatar=$('composerAvatar');if(avatar){avatar.replaceChildren();if(p?.avatarUrl){const img=document.createElement('img');img.src=p.avatarUrl;img.alt='';avatar.appendChild(img);}else avatar.textContent=(p?.displayName||currentUser?.displayName||'L')[0]?.toUpperCase()||'L';}notice(currentUser?`Posting as ${p?.displayName||currentUser.displayName||currentUser.email}`:'You can read everything. Sign in to post, react, save and reply.');await refreshFeed();await loadSuggestedPeople();});
 
-  const upvote=document.createElement('button'); upvote.className='community-pill'; upvote.type='button'; upvote.textContent=`▲ ${Number(post.upvotes || 0)}`;
-  upvote.disabled=Boolean(post.sample);
-  upvote.addEventListener('click',async()=>{
-    if (!currentUser) { location.href='auth.html'; return; }
-    upvote.disabled=true;
-    try { await toggleCommunityVote(post.id); await renderFeed(); }
-    catch(error){ setNotice(error.message || 'Could not update vote.','error'); }
-    finally{ upvote.disabled=false; }
-  });
-
-  actions.append(reply,upvote); card.append(title,meta,body,actions); return card;
-}
-
-async function renderFeed() {
-  const feed=$('communityFeed'); const empty=$('communityEmpty');
-  if (!feed) return;
-  feed.replaceChildren();
-  let posts=SAMPLE_POSTS;
-  if (backendReady) {
-    try {
-      const remote=await loadCommunityPosts();
-      if (remote.length) posts=remote.slice(0,50);
-    } catch (error) { console.warn(error); setNotice('Community backend is connected but the feed could not be loaded yet.','error'); }
-  }
-  posts.forEach(post => feed.appendChild(cardForPost(post)));
-  if (empty) empty.hidden=posts.length > 0;
-}
-
-function updateAuthNotice() {
-  if (!backendReady) return setNotice('Backend is not configured yet. Community is in read-only preview mode.','info');
-  if (!currentUser) return setNotice(`Community is live on ${backend.provider}. Sign in to publish, vote and reply.`,'info');
-  setNotice(`Publishing as ${currentUser.displayName || currentUser.email || 'LinuxAid learner'} • ${backend.provider}`,'success');
-}
-
-$('communityForm')?.addEventListener('submit', async event => {
-  event.preventDefault();
-  const title=$('communityTitle').value.trim();
-  const body=$('communityBody').value.trim();
-  if (title.length < 8 || body.length < 20) return setNotice('Use a clear title and include enough detail for someone to understand the problem.','error');
-  if (!backendReady || !currentUser) { location.href='auth.html'; return; }
-  const button=event.submitter; button.disabled=true; button.textContent='Publishing…';
-  try {
-    await saveCommunityPost({ id:crypto.randomUUID(), title, body });
-    $('communityTitle').value=''; $('communityBody').value='';
-    await renderFeed();
-    setNotice('Discussion published successfully.','success');
-    document.dispatchEvent(new CustomEvent('linuxaid:community-post',{ detail:{ source:'community' } }));
-  } catch (error) {
-    console.error(error); setNotice(error.message || 'Could not publish. Check your backend and sign-in status.','error');
-  } finally { button.disabled=false; button.textContent='Publish discussion'; }
-});
-
-if (backendReady) onAuthStateChangedListener(user => { currentUser=user || null; updateAuthNotice(); });
-updateAuthNotice();
-renderFeed();
+let refreshTimer;const scheduleRefresh=()=>{clearTimeout(refreshTimer);refreshTimer=setTimeout(()=>refreshFeed(false),350);};stopFeed=subscribeToTable('community_posts',scheduleRefresh);const stopReplies=subscribeToTable('community_replies',scheduleRefresh);addEventListener('pagehide',()=>{stopFeed();stopReplies();},{once:true});
+refreshFeed();loadSuggestedPeople();
