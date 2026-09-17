@@ -1,4 +1,4 @@
-import { createTerminalEngine } from './terminalEngine.js';
+import { createTerminalEngine } from './terminalEngineV8.js';
 import { recordCommandUsage } from './progress.js';
 
 const excludedPages = new Set(['auth','privacy','terms','cookies','security']);
@@ -17,13 +17,15 @@ if (!excludedPages.has(document.body.dataset.page || '')) {
   backdrop.innerHTML = `
     <section class="terminal-dock" role="dialog" aria-modal="true" aria-label="LinuxAid Terminal Lab">
       <header class="terminal-dock-head">
-        <div class="terminal-dock-title"><span></span><i class="fas fa-terminal" aria-hidden="true"></i><span>LinuxAid Terminal Lab</span></div>
+        <div class="terminal-dock-title"><span></span><i class="fas fa-terminal" aria-hidden="true"></i><span>LinuxAid Terminal V8</span></div>
         <div class="terminal-dock-actions">
+          <button type="button" data-terminal-doctor aria-label="Run terminal doctor"><i class="fas fa-stethoscope"></i></button>
+          <button type="button" data-terminal-commands aria-label="Show command reference"><i class="fas fa-book"></i></button>
           <button type="button" data-terminal-clear aria-label="Clear terminal"><i class="fas fa-eraser"></i></button>
           <button type="button" data-terminal-close aria-label="Close terminal"><i class="fas fa-xmark"></i></button>
         </div>
       </header>
-      <div class="terminal-dock-status" id="terminalDockStatus">Safe simulator • Type <strong>help</strong> or <strong>man ls</strong>. Destructive patterns are blocked.</div>
+      <div class="terminal-dock-status" id="terminalDockStatus">Safe simulator + ${engine.referenceCount.toLocaleString()} indexed command forms • Try <strong>doctor</strong>, <strong>debug</strong>, <strong>commands</strong> or <strong>man ls</strong>.</div>
       <div class="terminal-dock-output" id="terminalDockOutput" aria-live="polite"></div>
       <form class="terminal-dock-input-row" id="terminalDockForm">
         <span id="terminalDockPrompt">linuxaid@simulator:~$</span>
@@ -61,7 +63,7 @@ if (!excludedPages.has(document.body.dataset.page || '')) {
     if (output.childElementCount) return;
     const intro = document.createElement('div');
     intro.className = 'terminal-dock-line';
-    intro.textContent = 'LinuxAid Terminal Lab ready. Inspect first, change second, verify last. Try: pwd, ls -la, cat README.md, man chmod, ip addr, df -h.';
+    intro.textContent = `LinuxAid Terminal V8 ready. Core commands are safely simulated and ${engine.referenceCount.toLocaleString()} command forms are indexed. Try: pwd, ls -la, doctor, commands docker, explain chmod, or debug permission denied.`;
     output.appendChild(intro);
   }
 
@@ -105,6 +107,8 @@ if (!excludedPages.has(document.body.dataset.page || '')) {
     status.textContent = 'Terminal cleared • Your simulated filesystem is still available.';
     input.focus();
   });
+  backdrop.querySelector('[data-terminal-doctor]').addEventListener('click', () => { run('doctor'); input.focus(); });
+  backdrop.querySelector('[data-terminal-commands]').addEventListener('click', () => { run('commands'); input.focus(); });
   backdrop.addEventListener('click', event => { if (event.target === backdrop) close(); });
   form.addEventListener('submit', event => {
     event.preventDefault();
