@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Sign in or create a LinuxAid account to sync Linux learning progress across devices.">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="description" content="Sign in or create a LinuxAid account to sync Linux practice, rankings and preferences across devices.">
   <meta name="theme-color" content="#061018">
   <title>LinuxAid | Account</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -14,6 +14,9 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="product.css">
+  <link rel="stylesheet" href="experience-v3.css">
+  <link rel="stylesheet" href="deployment-v4.css">
+  <link rel="stylesheet" href="mobile-v5.css">
   <script src="config.js"></script>
 </head>
 <body data-page="auth">
@@ -21,11 +24,11 @@
     <section class="auth-showcase">
       <a href="index.html" class="badge-pill" style="width:fit-content;margin-bottom:auto"><i class="fas fa-arrow-left"></i> Back to LinuxAid</a>
       <div>
-        <div class="eyebrow">Your Linux learning identity</div>
+        <div class="eyebrow">Your LinuxAid identity</div>
         <h1>Build skills. Keep progress.</h1>
-        <p>Create a free LinuxAid account to sync your profile, AI chat history, course progress and lab achievements across devices.</p>
+        <p>Create a free account to sync your profile, AI chat history, rank progress and preferences across devices.</p>
         <div class="hero-badges" style="margin-top:24px">
-          <span class="badge-pill"><i class="fas fa-shield-halved"></i> Supabase-first auth</span>
+          <span class="badge-pill"><i class="fas fa-shield-halved"></i> Supabase Auth</span>
           <span class="badge-pill"><i class="fas fa-cloud-arrow-up"></i> Cross-device sync</span>
           <span class="badge-pill"><i class="fas fa-lock"></i> Row-level security</span>
         </div>
@@ -34,9 +37,10 @@
 
     <section class="auth-panel">
       <div class="auth-card">
+        <a href="index.html" class="badge-pill" style="width:fit-content;margin-bottom:18px"><i class="fas fa-arrow-left"></i> LinuxAid</a>
         <div class="eyebrow">LinuxAid Account</div>
         <h2 id="authHeading" style="margin:0 0 8px">Welcome back</h2>
-        <p id="authSubheading" style="color:var(--muted);margin:0 0 22px">Sign in to continue your learning journey.</p>
+        <p id="authSubheading" style="color:var(--muted);margin:0 0 22px">Sign in to sync your LinuxAid workspace.</p>
         <div id="authMessage" class="auth-message" role="status" aria-live="polite"></div>
 
         <div class="auth-tabs" role="tablist" aria-label="Account action">
@@ -44,8 +48,8 @@
           <button class="auth-tab" type="button" data-auth-tab="create" role="tab" aria-selected="false">Create account</button>
         </div>
 
-        <button class="button primary" id="authGoogle" type="button" style="width:100%"><i class="fab fa-google"></i> Continue with Google</button>
-        <div class="auth-divider">or use email</div>
+        <button class="button primary" id="authGoogle" type="button" style="width:100%" hidden><i class="fab fa-google"></i> Continue with Google</button>
+        <div class="auth-divider" hidden>or use email</div>
 
         <form id="authForm" class="auth-form-grid" novalidate>
           <label class="form-label" id="nameField" hidden>
@@ -54,11 +58,11 @@
           </label>
           <label class="form-label">
             Email address
-            <input class="form-control" id="authPageEmail" type="email" autocomplete="email" required placeholder="you@example.com">
+            <input class="form-control" id="authPageEmail" type="email" autocomplete="email" inputmode="email" required placeholder="you@example.com">
           </label>
           <label class="form-label">
             Password
-            <div style="display:flex;gap:8px">
+            <div style="display:flex;gap:8px;min-width:0">
               <input class="form-control" id="authPagePassword" type="password" minlength="8" autocomplete="current-password" required placeholder="At least 8 characters">
               <button class="button" id="togglePassword" type="button" aria-label="Show password"><i class="fas fa-eye"></i></button>
             </div>
@@ -67,6 +71,7 @@
             Confirm password
             <input class="form-control" id="authConfirmPassword" type="password" minlength="8" autocomplete="new-password" placeholder="Repeat password">
           </label>
+          <div class="auth-captcha-wrap" id="authCaptcha"></div>
           <button class="button primary" id="authSubmit" type="submit" style="width:100%">Sign in</button>
         </form>
 
@@ -75,10 +80,10 @@
           <button class="button" id="demoMode" type="button">Continue in demo mode</button>
         </div>
 
-        <p style="margin:20px 0 0;color:var(--muted);font-size:.82rem;line-height:1.65">LinuxAid never stores your password itself. Authentication is handled by the connected backend provider. The recommended deployment uses Supabase Auth with email verification, password recovery, Google OAuth, database row-level security and optional browser-only demo mode.</p>
+        <p style="margin:20px 0 0;color:var(--muted);font-size:.82rem;line-height:1.65">LinuxAid does not store your password itself. Supabase Auth handles account credentials. Optional bot protection can be enabled with Cloudflare Turnstile; the secret key stays in Supabase, never in this page.</p>
       </div>
     </section>
   </main>
-  <script type="module" src="js/authPage.js"></script>
+  <script type="module" src="js/authV5.js"></script>
 </body>
 </html>
