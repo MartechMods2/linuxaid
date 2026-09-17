@@ -20,7 +20,10 @@ export function createTerminalEngine(initial={}){
     const input=String(raw||'').trim();const cmd=firstCommand(input);const parts=input.split(/\s+/);
     if(cmd==='help')return{output:`LinuxAid Terminal V8\n${COMMAND_UNIVERSE_V8.length}+ commands recognized • ${CORE.size} core commands deeply simulated.\n\nUse:\n  commands [prefix]  search the command universe\n  man <command>      core manual / safe reference\n  debug <topic>      troubleshooting playbooks\n\nDebug topics: ${Object.keys(DEBUG_PLAYBOOKS).join(', ')}\nCore simulator: ${[...CORE].join(', ')}`,command:'help',safety:{level:'safe',reason:'Help only.'},cwd:engine.state.cwd};
     if(cmd==='commands'||cmd==='apropos'){
-      const needle=parts.slice(1).join(' ');const matches=commandUniverseMatchesV8(needle,80);return{output:`${COMMAND_UNIVERSE_V8.length} commands indexed.${needle?` Matches for “${needle}”:` First ${matches.length}:`}\n${matches.join('  ')||'No matching command.'}`,command:cmd,safety:{level:'safe',reason:'Command catalog search only.'},cwd:engine.state.cwd};
+      const needle=parts.slice(1).join(' ');
+      const matches=commandUniverseMatchesV8(needle,80);
+      const label=needle?` Matches for “${needle}”`:` First ${matches.length}:`;
+      return{output:`${COMMAND_UNIVERSE_V8.length} commands indexed.${label}\n${matches.join('  ')||'No matching command.'}`,command:cmd,safety:{level:'safe',reason:'Command catalog search only.'},cwd:engine.state.cwd};
     }
     if(cmd==='debug'){
       const topic=(parts[1]||'').toLowerCase();const text=DEBUG_PLAYBOOKS[topic];return{output:text||`Debug topics: ${Object.keys(DEBUG_PLAYBOOKS).join(', ')}\nExample: debug network`,command:'debug',safety:{level:'safe',reason:'Read-only troubleshooting guidance.'},cwd:engine.state.cwd};
