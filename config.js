@@ -17,12 +17,9 @@ window.LINUXAID_CONFIG = {
     googleEnabled: true,
     magicLinkEnabled: true,
     requireEmailVerification: true,
-    // Turn this on only after Google OAuth is configured in Supabase.
-    providerLabel: 'Supabase Auth'
+    providerLabel: 'LinuxAid Account'
   },
   security: {
-    // Paste only the PUBLIC Turnstile site key here after creating a widget.
-    // Put the Turnstile SECRET in Supabase Auth > Bot and Abuse Protection.
     turnstileSiteKey: '0x4AAAAAAE6PU0UdSo50KwA_',
     authTimeoutMs: 15000,
     maxAuthAttemptsPerWindow: 6,
@@ -45,7 +42,9 @@ window.LINUXAID_CONFIG = {
   product: {
     name: 'LinuxAid',
     repository: 'https://github.com/MartechMods2/linuxaid',
-    website: 'https://martechmods2.github.io/linuxaid/'
+    website: 'https://martechmods2.github.io/linuxaid/',
+    // Paste your Buy Me a Coffee / Ko-fi / GitHub Sponsors URL here.
+    supportUrl: ''
   }
 };
 
