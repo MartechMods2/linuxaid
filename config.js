@@ -1,7 +1,6 @@
 // Public runtime configuration for the static LinuxAid site.
-// Supabase project URLs and publishable keys are browser-safe identifiers.
-// Security is enforced with Row Level Security (RLS). Never put service_role,
-// OpenAI, Gemini, Resend or other secret server keys in this file.
+// Only PUBLIC client identifiers belong here. Never place Supabase service_role,
+// Cloudflare Turnstile secret, Google OAuth secret, OpenAI/Gemini or SMTP secrets in this file.
 window.LINUXAID_CONFIG = {
   backendProvider: 'supabase',
   backend: {
@@ -13,10 +12,20 @@ window.LINUXAID_CONFIG = {
     },
     firebase: null
   },
+  auth: {
+    siteUrl: 'https://martechmods2.github.io/linuxaid/',
+    googleEnabled: false,
+    captcha: {
+      provider: 'turnstile',
+      // Public Cloudflare Turnstile site key goes here. The secret key belongs in Supabase Auth settings.
+      siteKey: ''
+    }
+  },
   ai: {
     proxyUrl: '',
     edgeFunction: 'linuxaid-ai',
     provider: 'server',
+    requestTimeoutMs: 25000,
     allowInsecureBrowserAI: false
   },
   analytics: {
@@ -28,11 +37,23 @@ window.LINUXAID_CONFIG = {
   },
   product: {
     name: 'LinuxAid',
+    founder: 'Martech',
     repository: 'https://github.com/MartechMods2/linuxaid',
     website: 'https://martechmods2.github.io/linuxaid/'
   }
 };
 window.LINUXAID_CONFIG.firebase = window.LINUXAID_CONFIG.backend.firebase;
+
+// Make the current visual/mobile layer available on every legacy and new page.
+for (const href of ['experience-v3.css','deployment-v4.css','mobile-v5.css']) {
+  if (!document.querySelector(`link[href="${href}"]`)) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    link.dataset.linuxaidRuntimeStyle = 'true';
+    document.head.appendChild(link);
+  }
+}
 
 Promise.all([
   import('./js/siteEnhancements.js'),

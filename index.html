@@ -1,189 +1,82 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-  <meta name="description" content="LinuxAid is a beginner-friendly Linux learning platform with safe terminal labs, practical courses, Linux troubleshooting tools and AI guidance.">
-  <meta name="keywords" content="Linux learning, Linux AI assistant, terminal simulator, Linux labs, command explorer, Linux tutorials">
-  <meta name="author" content="LinuxAid">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="description" content="LinuxAid is Martech's safety-first Linux practice workspace with an interactive terminal, AI guidance, troubleshooting tools, labs, community and XP rankings.">
+  <meta name="keywords" content="Linux learning, Linux terminal simulator, Linux command practice, Linux troubleshooting, LinuxAid, Martech">
+  <meta name="author" content="Martech, Founder & CEO of LinuxAid">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://martechmods2.github.io/linuxaid/">
   <meta property="og:title" content="LinuxAid — Learn Linux Without Fear">
-  <meta property="og:description" content="Learn, practise and troubleshoot Linux in one safety-first workspace.">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://martechmods2.github.io/linuxaid/">
-  <meta name="theme-color" content="#061018">
+  <meta property="og:description" content="Practise Linux commands safely, troubleshoot real scenarios and rank up through useful activity.">
+  <meta property="og:type" content="website"><meta property="og:url" content="https://martechmods2.github.io/linuxaid/">
+  <meta name="twitter:card" content="summary_large_image"><meta name="theme-color" content="#061018">
   <title>LinuxAid | Learn Linux Without Fear</title>
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="product.css">
-  <link rel="stylesheet" href="hero-motion.css">
+  <link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="product.css"><link rel="stylesheet" href="hero-motion.css"><link rel="stylesheet" href="experience-v3.css"><link rel="stylesheet" href="deployment-v4.css"><link rel="stylesheet" href="mobile-v5.css">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"LinuxAid","url":"https://martechmods2.github.io/linuxaid/","applicationCategory":"EducationalApplication","creator":{"@type":"Person","name":"Martech","jobTitle":"Founder & CEO"},"description":"A safety-first Linux practice and troubleshooting workspace."}</script>
   <script src="config.js"></script>
 </head>
 <body data-page="home">
-  <header class="navbar">
-    <a class="brand" href="index.html" aria-label="LinuxAid home" style="text-decoration:none;color:inherit;">
-      <div style="width:44px;height:44px;border-radius:18px;background:rgba(35,255,139,0.15);display:grid;place-items:center;color:var(--green);font-size:1.15rem;font-weight:900;">L</div>
-      <div>
-        <h1>LinuxAid</h1>
-        <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">Linux learning workspace</div>
-      </div>
-    </a>
-    <nav class="nav-links" aria-label="Primary navigation">
-      <a href="index.html" class="active-page">Home</a>
-      <a href="courses.html">Courses</a>
-      <a href="labs.html">Labs</a>
-      <a href="tools.html">Tools</a>
-      <a href="community.html">Community</a>
-      <a href="dashboard.html">Dashboard</a>
-    </nav>
-    <div class="cta-group">
-      <a class="button" href="auth.html">Sign in</a>
-      <a class="button primary" href="dashboard.html">Open LinuxAid</a>
-      <button class="button" id="themeToggle" type="button" aria-label="Toggle light and dark theme"><i class="fas fa-moon" aria-hidden="true"></i></button>
+<header class="navbar">
+  <a class="brand" href="index.html" aria-label="LinuxAid home"><img data-linuxaid-logo class="linuxaid-brand-logo" alt="LinuxAid"><div><h1>LinuxAid</h1><div style="font-size:.8rem;color:var(--muted)">Learn by doing</div></div></a>
+  <nav class="nav-links" aria-label="Primary navigation"><a href="index.html" class="active-page">Home</a><a href="dashboard.html">Dashboard</a><a href="labs.html">Labs</a><a href="tools.html">Tools</a><a href="community.html">Community</a><a href="rankings.html">Rankings</a></nav>
+  <div class="cta-group"><a class="button" href="auth.html">Sign in</a><a class="button primary" href="dashboard.html">Open LinuxAid</a><button class="button" id="themeToggle" type="button" aria-label="Toggle light and dark theme"><i class="fas fa-moon"></i></button></div>
+</header>
+
+<main class="site-shell" id="main-content">
+  <section class="hero landing-hero kinetic-hero" data-kinetic-hero>
+    <div class="hero-copy">
+      <div class="kinetic-kicker">LinuxAid / safe Linux practice</div>
+      <h1 class="hero-title">Learn Linux <strong>without fear.</strong></h1>
+      <p class="hero-lead">Understand commands, experiment in a safe browser terminal, diagnose Linux errors and build rank through useful practice—not certificate promises.</p>
+      <div class="kinetic-proof"><span><i class="fas fa-shield-halved"></i> Safety-first</span><span><i class="fas fa-terminal"></i> Floating terminal</span><span><i class="fas fa-flask"></i> Hands-on labs</span><span><i class="fas fa-ranking-star"></i> XP rankings</span></div>
+      <div class="hero-actions"><a class="button primary" href="dashboard.html">Start practising</a><button class="button" type="button" data-open-terminal><i class="fas fa-terminal"></i> Open terminal</button></div>
     </div>
-  </header>
+    <div class="kinetic-cycle-mark" aria-hidden="true"></div>
+    <div class="kinetic-side-note" aria-hidden="true"><strong>Interactive Linux workspace</strong><span>Move through the particle field.</span></div>
+  </section>
 
-  <main class="site-shell" id="main-content">
-    <section class="hero landing-hero kinetic-hero" id="home" data-kinetic-hero>
-      <div class="hero-copy">
-        <div class="kinetic-kicker">LinuxAid / Learn by doing</div>
-        <h1 class="hero-title">Learn Linux <strong>without fear.</strong></h1>
-        <p class="hero-lead">Understand commands, practise inside a safe terminal, solve real troubleshooting labs, and build the habits that make Linux feel natural.</p>
-        <div class="kinetic-proof" aria-label="LinuxAid features">
-          <span><i class="fas fa-shield-halved"></i> Safety-first</span>
-          <span><i class="fas fa-terminal"></i> Browser terminal</span>
-          <span><i class="fas fa-flask"></i> Hands-on labs</span>
-          <span><i class="fas fa-brain"></i> Guided learning</span>
-        </div>
-        <div class="hero-actions">
-          <a class="button primary" href="dashboard.html">Start practising</a>
-          <a class="button" href="courses.html">Browse courses</a>
-        </div>
-      </div>
-      <div class="kinetic-cycle-mark" aria-hidden="true"></div>
-      <div class="kinetic-side-note" aria-hidden="true">
-        <strong>Interactive Linux workspace</strong>
-        <span>Move your pointer through the constellation.</span>
-      </div>
-    </section>
+  <section class="section" id="platform">
+    <div class="section-title"><i class="fas fa-layer-group"></i><span>LinuxAid workspace</span></div>
+    <h2>One place to inspect, practise and troubleshoot.</h2>
+    <p class="lead">LinuxAid combines the things beginners usually have to hunt for across several tabs: command explanations, a safe terminal, troubleshooting tools, practical scenarios and a visible progress system.</p>
+    <div class="feature-grid">
+      <article class="feature-card glass"><div class="feature-icon"><i class="fas fa-terminal"></i></div><h3>Floating Terminal V2</h3><p>Open the simulator from anywhere, use command history and autocomplete, and practise against a stateful virtual filesystem without touching your actual device.</p><button class="button" type="button" data-open-terminal>Launch terminal</button></article>
+      <article class="feature-card glass"><div class="feature-icon"><i class="fas fa-shield-halved"></i></div><h3>Command safety</h3><p>Inspect dangerous patterns before you trust them. LinuxAid blocks destructive simulator actions and explains why risky commands deserve extra care.</p><a class="button" href="tools.html">Analyze commands</a></article>
+      <article class="feature-card glass"><div class="feature-icon"><i class="fas fa-ranking-star"></i></div><h3>Ranks instead of certificates</h3><p>Earn XP through meaningful Linux activity and move from Kernel Seed toward Linux Legend as your practice grows.</p><a class="button" href="rankings.html">See rank ladder</a></article>
+    </div>
+  </section>
 
-    <section class="section" id="platform">
-      <div class="section-title"><i class="fas fa-layer-group"></i><span>One Linux workspace</span></div>
-      <h2>Learn, practise, diagnose, repeat.</h2>
-      <p class="lead">LinuxAid keeps the learning loop in one place. You do not need to jump between a command cheat sheet, a terminal, a course, and a troubleshooting forum just to understand one problem.</p>
-      <div class="feature-grid">
-        <article class="feature-card glass">
-          <div class="feature-icon"><i class="fas fa-terminal"></i></div>
-          <h3>Safe Terminal V2</h3>
-          <p>Practise Linux commands against a stateful virtual filesystem with history, autocomplete, manuals and destructive-command protection.</p>
-          <a class="button" href="dashboard.html#terminal">Open terminal</a>
-        </article>
-        <article class="feature-card glass">
-          <div class="feature-icon"><i class="fas fa-graduation-cap"></i></div>
-          <h3>Courses & quizzes</h3>
-          <p>Build foundations in navigation, permissions, networking, administration and shell workflows while LinuxAid tracks your local progress.</p>
-          <a class="button" href="courses.html">View courses</a>
-        </article>
-        <article class="feature-card glass">
-          <div class="feature-icon"><i class="fas fa-flask"></i></div>
-          <h3>Scenario labs</h3>
-          <p>Fix permission errors, inspect services, search logs, troubleshoot networking and complete practical tasks instead of only reading theory.</p>
-          <a class="button" href="labs.html">Start a lab</a>
-        </article>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-title"><i class="fas fa-screwdriver-wrench"></i><span>Troubleshooting tools</span></div>
-      <div class="linux-grid">
-        <div>
-          <h2>Understand a command before you trust it.</h2>
-          <p class="lead">Paste a command, decode permissions, translate package commands between distros, or drop in a Linux error. LinuxAid explains what is happening and what to inspect next.</p>
-          <div class="hero-actions">
-            <a class="button primary" href="tools.html">Open Linux tools</a>
-            <a class="button" href="linux.html">Linux fundamentals</a>
-          </div>
-        </div>
-        <div class="panel glass">
-          <div class="panel-title">Safety workflow</div>
-          <pre style="margin:0;white-space:pre-wrap;color:var(--muted);font-family:var(--mono-font);line-height:1.85;">$ inspect target
+  <section class="section">
+    <div class="linux-grid">
+      <div><div class="section-title"><i class="fas fa-screwdriver-wrench"></i><span>Troubleshooting</span></div><h2>Understand the problem before changing the system.</h2><p class="lead">Paste an error, decode permissions, compare package commands between distros, inspect command risk or use LinuxAid AI when the remote provider is configured.</p><div class="hero-actions"><a class="button primary" href="tools.html">Open Linux tools</a><a class="button" href="dashboard.html#assistant">Ask LinuxAid</a></div></div>
+      <div class="panel glass"><div class="panel-title">LinuxAid workflow</div><pre style="margin:0;white-space:pre-wrap;color:var(--muted);font-family:'Fira Code',monospace;line-height:1.85">$ inspect the target
 $ understand the command
-$ make the smallest change
+$ make the smallest safe change
 $ verify the result
 
-LinuxAid blocks destructive simulator patterns and explains why risky commands deserve extra care.</pre>
-        </div>
-      </div>
-    </section>
+Practice first. Escalate privileges only when you understand why.</pre></div>
+    </div>
+  </section>
 
-    <section class="section">
-      <div class="section-title"><i class="fas fa-route"></i><span>Your learning loop</span></div>
-      <h2>From first command to real confidence.</h2>
-      <div class="feature-grid">
-        <article class="feature-card glass">
-          <div class="feature-icon">01</div>
-          <h3>Learn the idea</h3>
-          <p>Use concise lessons and command references to understand what a Linux concept actually means.</p>
-        </article>
-        <article class="feature-card glass">
-          <div class="feature-icon">02</div>
-          <h3>Try it safely</h3>
-          <p>Run the command in LinuxAid's simulator, inspect the result and build muscle memory without risking your machine.</p>
-        </article>
-        <article class="feature-card glass">
-          <div class="feature-icon">03</div>
-          <h3>Solve a scenario</h3>
-          <p>Use labs and troubleshooting tools to apply the same concept when the answer is not handed to you.</p>
-        </article>
-      </div>
-    </section>
+  <section class="section">
+    <div class="founder-card">
+      <div class="founder-mark"><img data-linuxaid-logo alt="LinuxAid logo"></div>
+      <div><div class="eyebrow">Creator</div><h3>Martech</h3><div class="founder-role">Founder & CEO, LinuxAid</div><p>Martech created LinuxAid to make Linux less intimidating and more practical: a place where learners can inspect commands, experiment safely, understand errors and develop confidence through repeated hands-on use.</p></div>
+      <div class="hero-actions"><a class="button" href="https://github.com/MartechMods2/linuxaid">GitHub</a><a class="button primary" href="dashboard.html">Enter LinuxAid</a></div>
+    </div>
+  </section>
 
-    <section class="section panel glass" style="margin-top:42px;overflow:hidden;">
-      <div class="linux-grid" style="align-items:center;">
-        <div>
-          <div class="section-title"><i class="fas fa-users"></i><span>Community-ready</span></div>
-          <h2>Learn with other Linux beginners.</h2>
-          <p class="lead">The community area is ready for a real backend so learners can ask questions, share safe fixes and build searchable knowledge together.</p>
-        </div>
-        <div class="hero-actions" style="justify-content:flex-end;">
-          <a class="button primary" href="community.html">Open community</a>
-          <a class="button" href="profile.html">View profile</a>
-        </div>
-      </div>
-    </section>
+  <section class="section panel glass" style="overflow:hidden">
+    <div class="linux-grid" style="align-items:center"><div><div class="section-title"><i class="fas fa-users"></i><span>Community</span></div><h2>Build searchable Linux knowledge together.</h2><p class="lead">Ask questions, discuss safe fixes, reply to other learners and upvote useful answers through the Supabase-backed community.</p></div><div class="hero-actions" style="justify-content:flex-end"><a class="button primary" href="community.html">Open community</a><a class="button" href="privacy.html">Privacy & trust</a></div></div>
+  </section>
 
-    <footer class="section footer glass" style="margin-top:40px;padding-top:28px;padding-bottom:28px;">
-      <div class="footer-row">
-        <div>
-          <h4>LinuxAid</h4>
-          <p>Learn Linux safely, practise deliberately, and understand what you are doing.</p>
-        </div>
-        <div>
-          <h4>Product</h4>
-          <a href="dashboard.html">Dashboard</a><br>
-          <a href="courses.html">Courses</a><br>
-          <a href="labs.html">Labs</a><br>
-          <a href="tools.html">Tools</a>
-        </div>
-        <div>
-          <h4>Project</h4>
-          <a href="community.html">Community</a><br>
-          <a href="https://github.com/MartechMods2/linuxaid">GitHub</a><br>
-          <a href="auth.html">Account</a><br>
-          <span style="display:block;margin-top:12px;color:var(--muted);font-size:0.9rem;">© 2026 LinuxAid</span>
-        </div>
-      </div>
-    </footer>
-  </main>
-
-  <button class="back-to-top" id="backToTop" aria-label="Back to top"><i class="fas fa-arrow-up"></i></button>
-  <script>try{sessionStorage.setItem('linuxaid-intro-seen','1')}catch{}</script>
-  <script type="module" src="js/pageBasics.js"></script>
-  <script type="module" src="js/siteEnhancements.js"></script>
-  <script type="module" src="js/heroMotion.js"></script>
-</body>
-</html>
+  <footer class="section footer glass"><div class="footer-row"><div><h4>LinuxAid</h4><p>Safety-first Linux practice created by Martech.</p></div><div><h4>Practice</h4><a href="dashboard.html">Dashboard</a><br><a href="labs.html">Labs</a><br><a href="tools.html">Tools</a><br><a href="rankings.html">Rankings</a></div><div><h4>Trust</h4><a href="privacy.html">Privacy</a><br><a href="terms.html">Terms</a><br><a href="cookies.html">Cookies</a><br><a href="security.html">Security</a></div></div></footer>
+</main>
+<script type="module" src="js/heroMotion.js"></script>
+</body></html>
