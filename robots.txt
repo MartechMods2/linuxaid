@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /messages.html
+Disallow: /auth.html
+
+Sitemap: https://martechmods2.github.io/linuxaid/sitemap.xml

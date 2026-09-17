@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import { readFile, access } from 'node:fs/promises';
 
 const REQUIRED_PAGES = [
-  'index.html','dashboard.html','linux.html','courses.html','labs.html','tools.html',
-  'community.html','profile.html','auth.html','offline.html','404.html'
+  'index.html','dashboard.html','linux.html','labs.html','tools.html',
+  'community.html','people.html','messages.html','rankings.html','profile.html','auth.html','offline.html','404.html'
 ];
 
-test('productization pages and PWA assets exist', async () => {
-  for (const path of [...REQUIRED_PAGES,'manifest.webmanifest','service-worker.js','product.css']) {
+test('product pages and PWA assets exist', async () => {
+  for (const path of [...REQUIRED_PAGES,'manifest.webmanifest','service-worker.js','product.css','social-v7.css']) {
     await assert.doesNotReject(() => access(path), `missing ${path}`);
   }
 });
@@ -20,11 +20,12 @@ test('public config keeps insecure browser AI disabled', async () => {
   assert.doesNotMatch(config, /sk-[A-Za-z0-9_-]{20,}/);
 });
 
-test('service worker app shell includes core learning routes', async () => {
+test('service worker app shell includes core LinuxAid routes', async () => {
   const sw = await readFile('service-worker.js','utf8');
-  for (const path of ['courses.html','labs.html','tools.html','community.html','offline.html']) {
+  for (const path of ['labs.html','tools.html','community.html','people.html','messages.html','rankings.html','offline.html']) {
     assert.match(sw, new RegExp(path.replace('.','\\.')));
   }
+  assert.doesNotMatch(sw, /supabase\.co'\]/);
 });
 
 test('mock admin analytics are suppressed until a real backend exists', async () => {
