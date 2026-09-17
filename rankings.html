@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="description" content="Track LinuxAid XP, Linux practice streaks and skill ranks from Kernel Seed to Linux Legend.">
+  <meta name="robots" content="index,follow">
+  <meta name="theme-color" content="#061018">
+  <title>LinuxAid | Rankings</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="product.css"><link rel="stylesheet" href="experience-v3.css"><link rel="stylesheet" href="deployment-v4.css"><link rel="stylesheet" href="mobile-v5.css">
+  <script src="config.js"></script>
+</head>
+<body data-page="rankings">
+<header class="navbar"><a class="brand" href="index.html"><img data-linuxaid-logo class="linuxaid-brand-logo" alt="LinuxAid"><div><h1>LinuxAid</h1><div style="font-size:.8rem;color:var(--muted)">Practice. Rank up. Repeat.</div></div></a><nav class="nav-links"><a href="index.html">Home</a><a href="dashboard.html">Dashboard</a><a href="labs.html">Labs</a><a href="tools.html">Tools</a><a href="community.html">Community</a><a href="rankings.html" class="active-page">Rankings</a></nav><div class="cta-group"><a class="button" href="profile.html">Profile</a><button class="button" id="themeToggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button></div></header>
+<main class="site-shell" id="main-content">
+  <section class="product-hero"><div class="eyebrow">LinuxAid rank system</div><h1>Make every useful command count.</h1><p>Your rank grows from practical activity: exploring commands, using the safe terminal, maintaining a streak and solving hands-on labs. LinuxAid does not issue certificates; your progress is represented by skills, XP and rank.</p><div class="hero-actions"><a class="button primary" href="dashboard.html#commands">Explore commands</a><button class="button" type="button" data-open-terminal><i class="fas fa-terminal"></i> Open terminal</button></div></section>
+  <section class="section" style="padding-top:12px"><div class="panel glass rank-panel" data-rank-panel></div></section>
+  <section class="section"><div class="section-heading"><div><div class="eyebrow">Rank ladder</div><h2>Climb by practising, not by collecting badges.</h2></div><p>Ranks are deliberately tied to useful Linux activity so the next milestone always gives you something concrete to chase.</p></div><div class="rank-ladder" id="rankLadder"></div></section>
+  <section class="section"><div class="section-heading"><div><div class="eyebrow">Ways to earn XP</div><h2>Keep momentum without fake certificates.</h2></div></div><div class="feature-grid"><article class="feature-card glass"><div class="feature-icon"><i class="fas fa-terminal"></i></div><h3>Explore commands</h3><p>Try commands safely in Terminal V2 and inspect what they actually do.</p></article><article class="feature-card glass"><div class="feature-icon"><i class="fas fa-fire"></i></div><h3>Build a streak</h3><p>Return regularly and keep your Linux practice habit alive.</p></article><article class="feature-card glass"><div class="feature-icon"><i class="fas fa-flask"></i></div><h3>Solve practical labs</h3><p>Apply concepts in troubleshooting scenarios instead of memorising syntax.</p></article></div></section>
+  <section class="section footer glass"><div class="footer-row"><div><h4>LinuxAid</h4><p>Built around real practice, not certificate promises.</p></div><div><h4>Practice</h4><a href="dashboard.html">Dashboard</a><br><a href="labs.html">Labs</a><br><a href="tools.html">Tools</a></div><div><h4>Trust</h4><a href="privacy.html">Privacy</a><br><a href="terms.html">Terms</a><br><a href="security.html">Security</a></div></div></section>
+</main>
+<script type="module">import{renderRankLadder}from'./js/ranks.js';import{getProgressSummary}from'./js/progress.js';const root=document.getElementById('rankLadder');renderRankLadder(root,getProgressSummary());</script>
+</body></html>
