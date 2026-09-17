@@ -1,57 +1,10 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Ask Linux questions, share safe troubleshooting steps and learn with the LinuxAid community.">
-  <title>LinuxAid | Community</title>
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="product.css">
-  <script src="config.js"></script>
-</head>
-<body data-page="community">
-  <header class="navbar">
-    <div class="brand"><div style="width:44px;height:44px;border-radius:18px;background:rgba(35,255,139,.15);display:grid;place-items:center;color:var(--green);font-weight:900">L</div><div><h1>LinuxAid</h1><div style="font-size:.82rem;color:var(--muted);margin-top:4px">Community help</div></div></div>
-    <nav class="nav-links"><a href="index.html">Home</a><a href="dashboard.html">Dashboard</a><a href="courses.html">Courses</a><a href="labs.html">Labs</a><a href="tools.html">Tools</a><a href="community.html">Community</a></nav>
-    <div class="cta-group"><a class="button" href="profile.html">Profile</a><a class="button primary" href="auth.html">Account</a><button class="button" id="themeToggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button></div>
-  </header>
-  <main class="site-shell" id="main-content">
-    <section class="product-hero">
-      <div class="eyebrow">LinuxAid Community</div>
-      <h1>Ask clearly. Answer safely.</h1>
-      <p>Share Linux questions, troubleshooting context and lessons learned. When Firebase is configured, signed-in users can publish posts and everyone can read the latest discussions.</p>
-    </section>
-
-    <section class="section" style="padding-top:20px">
-      <div class="product-layout">
-        <div>
-          <div class="section-title"><i class="fas fa-comments"></i><span>Latest discussions</span></div>
-          <div id="communityFeed" class="community-grid"></div>
-          <div id="communityEmpty" class="hint-box" hidden>No community posts yet. Start the first useful discussion.</div>
-        </div>
-        <aside class="product-sidebar">
-          <div class="tool-panel">
-            <h3>Start a discussion</h3>
-            <div id="communityAuthNotice" class="auth-message info show">Sign in with Firebase to publish. Preview mode can still read the local community sample.</div>
-            <form id="communityForm" class="auth-form-grid">
-              <label class="form-label">Title<input class="form-control" id="communityTitle" maxlength="140" placeholder="How do I diagnose…?"></label>
-              <label class="form-label">Details<textarea class="form-control" id="communityBody" rows="7" maxlength="5000" placeholder="Include distro, command, expected result and exact error."></textarea></label>
-              <button class="button primary" type="submit">Publish discussion</button>
-            </form>
-          </div>
-          <div class="tool-panel"><div class="eyebrow">Posting guide</div><p style="color:var(--muted);line-height:1.75">Include your distro, the exact command and full error. Remove passwords, tokens, private IP details and other secrets before posting.</p></div>
-        </aside>
-      </div>
-    </section>
-
-    <section class="section footer glass" style="margin-top:30px;padding:28px"><div class="footer-row"><div><h4>LinuxAid Community</h4><p>Beginner-friendly Linux learning without reckless commands.</p></div><div><h4>Learn</h4><a href="courses.html">Courses</a><br><a href="labs.html">Labs</a><br><a href="tools.html">Tools</a></div><div><h4>Project</h4><a href="https://github.com/MartechMods2/linuxaid">GitHub repository</a></div></div></section>
-  </main>
-  <button class="back-to-top" id="backToTop"><i class="fas fa-arrow-up"></i></button>
-  <script type="module" src="js/communityPage.js"></script>
-</body>
-</html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="description" content="Connect with Linux learners, post questions, share fixes, reply, react and build useful Linux knowledge together."><title>LinuxAid | Community</title><link rel="icon" href="favicon.svg"><link rel="manifest" href="manifest.webmanifest"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="product.css"><script src="config.js"></script></head>
+<body data-page="community"><header class="navbar"><a class="brand" href="index.html"><img data-linuxaid-logo class="linuxaid-brand-logo" alt="LinuxAid"><div><h1>LinuxAid</h1><div class="brand-subtitle">Connected Linux community</div></div></a><nav class="nav-links"><a href="index.html">Home</a><a href="dashboard.html">Dashboard</a><a href="community.html">Community</a><a href="people.html">People</a><a href="messages.html">Messages</a><a href="labs.html">Labs</a><a href="tools.html">Tools</a><a href="rankings.html">Rankings</a></nav><div class="cta-group"><button class="button icon-button" id="themeToggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button></div></header>
+<main class="site-shell" id="main-content"><section class="product-hero"><div class="eyebrow"><i class="fas fa-satellite-dish"></i> Live community</div><h1>Linux gets easier when people share what actually worked.</h1><p>Ask a clear question, post a fix, follow useful learners, react to good answers and keep the discussions you want to revisit. Everything here is backed by the live LinuxAid database.</p><div class="hero-proof"><span><i class="fas fa-bolt"></i> Live feed</span><span><i class="fas fa-user-group"></i> Follow people</span><span><i class="fas fa-bookmark"></i> Save posts</span><span><i class="fas fa-shield-halved"></i> Report & block</span></div></section>
+<section class="section" style="padding-top:12px"><div class="community-layout">
+<aside class="community-nav" aria-label="Community filters"><button class="active" data-feed-filter="latest"><i class="fas fa-clock"></i> Latest</button><button data-feed-filter="following"><i class="fas fa-user-group"></i> Following</button><button data-feed-filter="bookmarks"><i class="fas fa-bookmark"></i> Saved</button><a href="people.html"><i class="fas fa-compass"></i> Discover people</a><a href="messages.html"><i class="fas fa-message"></i> Messages</a><a href="notifications.html"><i class="fas fa-bell"></i> Notifications</a></aside>
+<div><div class="composer glass"><div class="composer-row"><div class="avatar-sm" id="composerAvatar">L</div><div style="min-width:0;flex:1"><form id="communityForm" class="auth-form-grid"><input class="form-control" id="communityTitle" maxlength="160" placeholder="What Linux problem, idea or fix do you want to share?" required><textarea class="form-control" id="communityBody" rows="4" maxlength="8000" placeholder="Include your distro, command, exact error, what you tried, or the useful solution you found." required></textarea><div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px"><input class="form-control" id="communityTags" maxlength="100" placeholder="Tags: permissions, ubuntu, bash"><button class="button primary" type="submit"><i class="fas fa-paper-plane"></i> Publish</button></div></form><div id="communityAuthNotice" style="color:var(--la-muted);font-size:.78rem;margin-top:10px"></div></div></div></div>
+<div style="display:flex;gap:10px;margin-bottom:14px"><input class="form-control" id="communitySearch" type="search" placeholder="Search current discussions…"><button class="button" id="refreshCommunity" type="button" aria-label="Refresh feed"><i class="fas fa-rotate"></i></button></div><div id="communityFeed"></div><div id="communityEmpty" class="empty-state" hidden><i class="fas fa-comments" style="font-size:1.7rem;color:var(--la-green)"></i><h3>No discussions here yet.</h3><p>Start a useful Linux conversation instead of looking at fake sample content.</p></div></div>
+<aside class="community-side"><div class="sidebar-card"><div class="eyebrow">Community pulse</div><h3 id="communityPulseTitle">Connected to LinuxAid</h3><p id="communityPulse" style="color:var(--la-muted)">Loading live activity…</p></div><div class="sidebar-card"><div class="eyebrow">Posting well</div><p style="color:var(--la-muted)">Include the distro, exact command and full error. Remove passwords, access tokens, private keys and other secrets before posting.</p></div><div class="sidebar-card"><div class="eyebrow">People worth finding</div><div id="communityPeople" style="display:grid;gap:10px"></div><a class="button" style="margin-top:12px;width:100%" href="people.html">Discover people</a></div></aside>
+</div></section>
+<footer class="section footer glass"><div class="footer-row"><div><h4>LinuxAid</h4><p>Practical Linux help, real people, safer experimentation.</p></div><div><h4>Connect</h4><a href="community.html">Community</a><br><a href="people.html">People</a><br><a href="messages.html">Messages</a></div><div><h4>Build skill</h4><a href="labs.html">Labs</a><br><a href="tools.html">Tools</a><br><a href="rankings.html">Rankings</a></div><div><h4>Trust</h4><a href="privacy.html">Privacy</a><br><a href="terms.html">Terms</a><br><a href="security.html">Security</a></div></div></footer></main><script type="module" src="js/communityPage.js"></script></body></html>
