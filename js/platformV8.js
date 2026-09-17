@@ -1,0 +1,24 @@
+const cfg=window.LINUXAID_CONFIG||{};
+const page=document.body?.dataset?.page||'';
+
+function addCss(){if(document.querySelector('link[data-platform-v8]'))return;const link=document.createElement('link');link.rel='stylesheet';link.href='platform-v8.css';link.dataset.platformV8='1';document.head.appendChild(link)}
+addCss();
+
+function icon(name){return `<i class="fas fa-${name}" aria-hidden="true"></i>`}
+function addMobileNav(){if(document.querySelector('.v8-mobile-nav'))return;const nav=document.createElement('nav');nav.className='v8-mobile-nav';nav.setAttribute('aria-label','Mobile navigation');const entries=[['dashboard','dashboard.html','gauge','Home'],['community','community.html','users','Community'],['terminal','#','terminal','Terminal'],['messages','messages.html','comments','Messages'],['profile','profile.html','user','Profile']];nav.innerHTML=entries.map(([key,href,ico,label])=>key==='terminal'?`<button type="button" data-v8-terminal>${icon(ico)}<span>${label}</span></button>`:`<a href="${href}" class="${page===key?'active':''}">${icon(ico)}<span>${label}</span></a>`).join('');nav.querySelector('[data-v8-terminal]')?.addEventListener('click',()=>document.dispatchEvent(new CustomEvent('linuxaid:open-terminal')));document.body.appendChild(nav)}
+
+function addOnlineStatus(){if(document.querySelector('.v8-online-pill'))return;const pill=document.createElement('div');pill.className='v8-online-pill';pill.setAttribute('role','status');function refresh(){const online=navigator.onLine;pill.classList.toggle('offline',!online);pill.textContent=online?'Connected':'Offline mode'}refresh();addEventListener('online',refresh);addEventListener('offline',refresh);document.body.appendChild(pill)}
+
+function hardenLinks(){document.querySelectorAll('a[target="_blank"]').forEach(a=>{const rel=new Set((a.rel||'').split(/\s+/).filter(Boolean));rel.add('noopener');rel.add('noreferrer');a.rel=[...rel].join(' ')})}
+
+function addFooterLinks(){const footer=document.querySelector('footer');if(!footer||footer.querySelector('.v8-footer-links'))return;const wrap=document.createElement('div');wrap.className='v8-footer-links';wrap.innerHTML='<a href="install.html">Install Linux</a><a href="commands.html">Command Library</a><a href="support.html">Buy me a coffee</a><a href="privacy.html">Privacy</a><a href="security.html">Security</a><a href="acceptable-use.html">Acceptable use</a>';footer.appendChild(wrap)}
+
+function addSkipLink(){if(document.querySelector('.v8-skip'))return;const main=document.querySelector('main');if(!main)return;if(!main.id)main.id='main-content';const a=document.createElement('a');a.href=`#${main.id}`;a.className='v8-skip';a.textContent='Skip to content';a.style.cssText='position:fixed;left:12px;top:-80px;z-index:2000;padding:10px 14px;border-radius:10px;background:var(--bg);color:var(--text);border:1px solid var(--hairline)';a.addEventListener('focus',()=>a.style.top='12px');a.addEventListener('blur',()=>a.style.top='-80px');document.body.prepend(a)}
+
+async function installSessionGuard(){if(page==='auth')return;const idleMs=Math.max(5*60_000,Number(cfg.security?.sessionIdleMs||45*60_000));const maxMs=Math.max(idleMs,Number(cfg.security?.sessionMaxAgeMs||12*60*60_000));let auth;try{auth=await import('./authClientV5.js');if(!auth.isSupabaseAuthReady?.())return;const user=await auth.getSessionUser();if(!user)return}catch{return}
+ const now=Date.now();const bornKey='linuxaid_session_started_v8';const activeKey='linuxaid_last_active_v8';if(!sessionStorage.getItem(bornKey))sessionStorage.setItem(bornKey,String(now));if(!sessionStorage.getItem(activeKey))sessionStorage.setItem(activeKey,String(now));let lastWrite=0;const activity=()=>{const t=Date.now();if(t-lastWrite<15_000)return;lastWrite=t;sessionStorage.setItem(activeKey,String(t))};['pointerdown','keydown','touchstart','scroll'].forEach(name=>addEventListener(name,activity,{passive:true}));const check=async()=>{const t=Date.now(),last=Number(sessionStorage.getItem(activeKey)||t),born=Number(sessionStorage.getItem(bornKey)||t);if(t-last<idleMs&&t-born<maxMs)return;try{await auth.signOut()}catch{}sessionStorage.removeItem(activeKey);sessionStorage.removeItem(bornKey);location.href=`auth.html?reason=session-timeout&next=${encodeURIComponent(page||'dashboard')}`};setInterval(check,60_000)}
+
+function exposeDiagnostics(){window.LinuxAidPlatform={version:'8.0',mobile:matchMedia('(max-width:760px)').matches,online:()=>navigator.onLine,config:()=>({backend:cfg.backendProvider||cfg.backend?.provider||'unknown',ai:cfg.ai?.edgeFunction||cfg.ai?.proxyUrl||'local',sessionIdleMs:cfg.security?.sessionIdleMs||45*60_000})}}
+
+function boot(){addSkipLink();addMobileNav();addOnlineStatus();addFooterLinks();hardenLinks();exposeDiagnostics();installSessionGuard().catch(()=>{})}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
