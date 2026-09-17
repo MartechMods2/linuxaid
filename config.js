@@ -17,18 +17,20 @@ window.LINUXAID_CONFIG = {
     googleEnabled: true,
     magicLinkEnabled: true,
     requireEmailVerification: true,
-    // Turn this on only after Google OAuth is configured in Supabase.
     providerLabel: 'Supabase Auth'
   },
   security: {
-    // Paste only the PUBLIC Turnstile site key here after creating a widget.
-    // Put the Turnstile SECRET in Supabase Auth > Bot and Abuse Protection.
+    // Only the PUBLIC Turnstile site key belongs here. Keep the secret in Supabase Auth.
     turnstileSiteKey: '0x4AAAAAAE6PU0UdSo50KwA_',
     authTimeoutMs: 15000,
     maxAuthAttemptsPerWindow: 6,
-    authAttemptWindowMs: 10 * 60 * 1000
+    authAttemptWindowMs: 10 * 60 * 1000,
+    // Frontend guard for unattended signed-in sessions. Backend RLS remains the authority.
+    sessionIdleMs: 45 * 60 * 1000,
+    sessionMaxAgeMs: 12 * 60 * 60 * 1000
   },
   ai: {
+    // AI secrets never go here. LinuxAid calls the authenticated Supabase Edge Function.
     proxyUrl: '',
     edgeFunction: 'linuxaid-ai',
     provider: 'server',
@@ -45,13 +47,18 @@ window.LINUXAID_CONFIG = {
   product: {
     name: 'LinuxAid',
     repository: 'https://github.com/MartechMods2/linuxaid',
-    website: 'https://martechmods2.github.io/linuxaid/'
+    website: 'https://martechmods2.github.io/linuxaid/',
+    // Paste your Buy Me a Coffee or Ko-fi public page here when ready.
+    // Example shape only: https://www.buymeacoffee.com/YOUR_HANDLE
+    supportUrl: '',
+    supportLabel: 'Buy me a coffee'
   }
 };
 
 window.LINUXAID_CONFIG.firebase = window.LINUXAID_CONFIG.backend.firebase;
 
 Promise.all([
+  import('./js/platformV8.js'),
   import('./js/siteEnhancements.js'),
   import('./js/pageBasics.js'),
   import('./js/navExtras.js'),
@@ -62,7 +69,7 @@ Promise.all([
   import('./js/brand.js'),
   import('./js/runtimeV5.js')
 ]).then(modules => {
-  const brand = modules[7];
+  const brand = modules[8];
   brand?.applyLinuxAidBranding?.();
   document.querySelectorAll('[data-rank-panel]').forEach(async node => {
     const [{ renderRankPanel }, { getProgressSummary }] = await Promise.all([import('./js/ranks.js'), import('./js/progress.js')]);
