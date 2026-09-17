@@ -14,7 +14,7 @@ window.LINUXAID_CONFIG = {
   },
   auth: {
     emailEnabled: true,
-    googleEnabled: false,
+    googleEnabled: true,
     magicLinkEnabled: true,
     requireEmailVerification: true,
     // Turn this on only after Google OAuth is configured in Supabase.
@@ -23,7 +23,7 @@ window.LINUXAID_CONFIG = {
   security: {
     // Paste only the PUBLIC Turnstile site key here after creating a widget.
     // Put the Turnstile SECRET in Supabase Auth > Bot and Abuse Protection.
-    turnstileSiteKey: '',
+    turnstileSiteKey: '0x4AAAAAAE6PU0UdSo50KwA_',
     authTimeoutMs: 15000,
     maxAuthAttemptsPerWindow: 6,
     authAttemptWindowMs: 10 * 60 * 1000
