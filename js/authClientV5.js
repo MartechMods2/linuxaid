@@ -7,7 +7,8 @@ export function isSupabaseAuthReady(){return Boolean(source.url&&(source.publish
 export async function getAuthClient(){
   if(!isSupabaseAuthReady()) throw new Error('Supabase Auth is not configured.');
   if(!clientPromise){
-    clientPromise=import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm').then(({createClient})=>createClient(source.url,source.publishableKey||source.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'pkce'},global:{headers:{'X-Client-Info':'linuxaid-auth-v5'}}}));
+    // Pin the browser SDK so a future CDN release cannot silently change production behavior.
+    clientPromise=import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm').then(({createClient})=>createClient(source.url,source.publishableKey||source.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'pkce'},global:{headers:{'X-Client-Info':'linuxaid-auth-v8'}}}));
   }
   return clientPromise;
 }
