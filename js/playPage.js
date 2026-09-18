@@ -8,6 +8,7 @@ let score=0;
 let combo=0;
 let bestCombo=0;
 let answered=false;
+let misses=[];
 
 function hashString(value){
   let h=2166136261;
@@ -59,7 +60,7 @@ function setScreen(name){
   $('quizResult').hidden=name!=='result';
 }
 function start(mode){
-  round=buildRound(mode);index=0;score=0;combo=0;bestCombo=0;answered=false;
+  round=buildRound(mode);index=0;score=0;combo=0;bestCombo=0;answered=false;misses=[];
   $('roundTitle').textContent=round.title;
   setScreen('quiz');
   renderQuestion();
@@ -87,7 +88,7 @@ function choose(optionIndex,button){
   if(answered)return;
   answered=true;
   const q=round.questions[index],correct=optionIndex===q.answer;
-  if(correct){score+=1;combo+=1;bestCombo=Math.max(bestCombo,combo);navigator.vibrate?.(18)}else{combo=0;navigator.vibrate?.([18,35,18])}
+  if(correct){score+=1;combo+=1;bestCombo=Math.max(bestCombo,combo);navigator.vibrate?.(18)}else{combo=0;misses.push(q);navigator.vibrate?.([18,35,18])}
   [...$('quizChoices').children].forEach((node,i)=>{
     node.disabled=true;
     if(i===q.answer)node.classList.add('correct');
@@ -124,6 +125,11 @@ function finish(){
   $('resultCombo').textContent=`${bestCombo}× best combo`;
   const message=result.percent===100?'Perfect round. That was clean.':result.percent>=80?'Strong run. You are building real command instincts.':result.percent>=60?'Good base. Review the misses and go again.':'Keep going. Linux gets easier through repetition.';
   $('resultMessage').textContent=message;
+  const review=$('resultReview');review.replaceChildren();
+  if(misses.length){
+    const h=document.createElement('strong');h.textContent='Review your misses';review.appendChild(h);
+    misses.slice(0,4).forEach(q=>{const p=document.createElement('p');p.textContent=\`• \${q.explanation}\`;review.appendChild(p)});
+  }else{review.innerHTML='<strong>No misses this round.</strong><p>Perfect recall. Try another mode or a harder lab.</p>'}
   if(result.percent===100)celebrate();
   updateStats();
 }
@@ -139,6 +145,13 @@ $('quizNext').addEventListener('click',next);
 $('quitQuiz').addEventListener('click',()=>{setScreen('modes');updateStats()});
 $('playAgain').addEventListener('click',()=>start(round?.mode||'quick'));
 $('backToModes').addEventListener('click',()=>setScreen('modes'));
+$('shareResult').addEventListener('click',async()=>{
+  const text=`I scored ${score}/${round?.questions.length||0} in LinuxAid ${round?.title||'Play'} 🐧 Can you beat it? ${location.origin+location.pathname.replace(/play\.html$/,'play.html')}`;
+  try{
+    if(navigator.share)await navigator.share({title:'LinuxAid Play',text});
+    else{await navigator.clipboard.writeText(text);$('shareResult').textContent='Copied challenge ✓';setTimeout(()=>$('shareResult').innerHTML='<i class="fas fa-share-nodes"></i> Share result',1200)}
+  }catch{}
+});
 document.addEventListener('keydown',keyboard);
 document.addEventListener('linuxaid:state-synced',updateStats);
 updateStats();
