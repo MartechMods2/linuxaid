@@ -27,7 +27,7 @@ function readAnswer(result) {
 async function queryBackendFunction(prompt, config, history) {
   await initBackend(config);
   const status = getBackendStatus();
-  if (!status.ready || status.provider !== 'supabase') throw new Error('Supabase backend is not configured.');
+  if (!status.ready) throw new Error('LinuxAid AI service is not configured.');
   const functionName = aiConfig(config).edgeFunction || 'linuxaid-ai';
   const result = await invokeBackendFunction(functionName, {
     prompt:String(prompt).slice(0,6000),
@@ -108,7 +108,7 @@ export function getAIStatus(config = {}) {
   const backend = getBackendStatus();
   const supabaseConfigured = Boolean(config.backend?.supabase?.url && (config.backend?.supabase?.publishableKey || config.backend?.supabase?.anonKey));
   if ((backend.ready && backend.provider === 'supabase') || supabaseConfigured) {
-    return { ready:true, mode:'edge-function', provider:'supabase', function:ai.edgeFunction || 'linuxaid-ai' };
+    return { ready:true, mode:'edge-function', provider:'server', function:ai.edgeFunction || 'linuxaid-ai' };
   }
   if (ai.proxyUrl || config.aiProxyUrl) return { ready:true, mode:'proxy', provider:ai.provider || 'server' };
   if (ai.allowInsecureBrowserAI === true && (ai.openaiApiKey || config.openaiApiKey)) return { ready:true, mode:'browser-direct', provider:'openai', warning:'API key is exposed to the browser.' };
@@ -126,6 +126,19 @@ export async function queryAI(prompt, config = {}, history = []) {
   if (provider === 'openai') return queryOpenAIDirect(prompt, config, history);
   if (provider === 'gemini') return queryGeminiDirect(prompt, config, history);
   throw new Error(`Unsupported AI provider: ${provider}`);
+}
+
+export async function checkAIHealth(config = {}) {
+  const ai=aiConfig(config);
+  const supabaseConfigured=Boolean(config.backend?.supabase?.url&&(config.backend?.supabase?.publishableKey||config.backend?.supabase?.anonKey));
+  if(supabaseConfigured){
+    try{
+      await initBackend(config);
+      const result=await invokeBackendFunction(ai.edgeFunction||'linuxaid-ai',{action:'status'});
+      return Boolean(result?.ready);
+    }catch{return false}
+  }
+  return Boolean(ai.proxyUrl||config.aiProxyUrl);
 }
 
 export const queryGemini = queryAI;

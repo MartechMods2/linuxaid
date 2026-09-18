@@ -1,5 +1,5 @@
 import { initBackend, getBackendStatus, onAuthStateChangedListener, signOutClient, loadUserChatHistory, saveUserChatHistory, loadCommunityPosts } from '../backend.js';
-import { queryAI, getAIStatus } from '../gemini.js';
+import { queryAI, getAIStatus, checkAIHealth } from '../gemini.js';
 import { COMMAND_CATALOG } from './commandCatalog.js';
 import { renderSafeMarkdown, clampText } from './security.js';
 import { getProgressSummary } from './progress.js';
@@ -10,6 +10,15 @@ let user = getBackendStatus().user || null;
 let chat = [];
 const $ = id => document.getElementById(id);
 
+async function refreshAIStatus(){
+  const badge=$('aiLiveStatus');if(!badge)return;
+  if(!user){badge.textContent='Sign in to use LinuxAid AI';badge.dataset.state='locked';return}
+  badge.textContent='Checking AI…';badge.dataset.state='checking';
+  const ready=await checkAIHealth(config);
+  badge.textContent=ready?'LinuxAid AI online':'AI service needs attention';
+  badge.dataset.state=ready?'online':'offline';
+}
+
 function setAuth(nextUser){
   user = nextUser || null;
   const button = $('authButton');
@@ -18,7 +27,8 @@ function setAuth(nextUser){
     button.href = user ? '#' : 'auth.html';
     button.onclick = user ? async event => { event.preventDefault(); await signOutClient(); location.reload(); } : null;
   }
-  if ($('authStatus')) $('authStatus').textContent = user ? `Signed in • ${user.displayName || user.email || 'LinuxAid learner'}` : 'Sign in to sync chat and use remote AI.';
+  if ($('authStatus')) $('authStatus').textContent = user ? `Signed in • ${user.displayName || user.email || 'LinuxAid learner'}` : 'Sign in to sync chat and use LinuxAid AI.';
+  refreshAIStatus();
 }
 
 function renderChat(){
@@ -54,8 +64,8 @@ async function send(){
   if(!user){ location.href='auth.html?next=dashboard'; return; }
   chat.push({role:'user',text:clampText(text,6000)}); input.value=''; renderChat();
   const pending={role:'assistant',text:'LinuxAid is thinking…'}; chat.push(pending); renderChat();
-  try { pending.text = getAIStatus(config).ready ? await queryAI(text,config,chat.slice(0,-1)) : 'Remote AI is not configured yet. Use the LinuxAid tools and terminal while the local tutor remains available.'; }
-  catch(error){ pending.text=`Remote AI is unavailable right now. ${error.message || ''}`.trim(); }
+  try { pending.text = getAIStatus(config).ready ? await queryAI(text,config,chat.slice(0,-1)) : 'LinuxAid AI is not configured yet. Use the tools and terminal while the AI service is unavailable.'; }
+  catch(error){ pending.text=`LinuxAid AI could not answer right now. ${error.message || 'Please retry in a moment.'}`.trim(); refreshAIStatus(); }
   renderChat(); await saveChat();
 }
 

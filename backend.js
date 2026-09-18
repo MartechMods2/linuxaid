@@ -64,7 +64,7 @@ async function initSupabase(config) {
   state.ready = true;
 
   const { data, error } = await state.client.auth.getSession();
-  if (error) console.warn('LinuxAid Supabase session restore failed:', error);
+  if (error) console.warn('LinuxAid session restore failed:', error);
   notifyAuth(data?.session?.user || null);
   state.client.auth.onAuthStateChange((_event, session) => notifyAuth(session?.user || null));
   return true;
@@ -222,7 +222,9 @@ export async function loadUserProfile(uid = state.lastUser?.uid) {
     distro:data.distro || '',
     learningGoal:data.learning_goal || '',
     avatarUrl:data.avatar_url || '',
-    role:data.role || 'learner'
+    role:data.role || 'learner',
+    themeMode:data.theme_mode || 'light',
+    accentColor:data.accent_color || '#16a34a'
   };
 }
 
@@ -234,6 +236,8 @@ export async function saveUserProfile(uid = state.lastUser?.uid, profile = {}) {
     distro:String(profile.distro || '').slice(0,40),
     learning_goal:String(profile.learningGoal || '').slice(0,500),
     avatar_url:String(profile.avatarUrl || profile.photoURL || '').slice(0,500),
+    theme_mode:['light','dark','system'].includes(profile.themeMode) ? profile.themeMode : 'light',
+    accent_color:/^#[0-9a-f]{6}$/i.test(String(profile.accentColor || '')) ? String(profile.accentColor).toLowerCase() : '#16a34a',
     updated_at:new Date().toISOString()
   };
   const { error } = await state.client.from('profiles').upsert(payload, { onConflict:'id' });
@@ -290,7 +294,7 @@ export async function saveCommunityPost(post) {
 }
 
 export async function toggleCommunityVote(postId) {
-  if (!state.ready) throw new Error('Voting requires the Supabase backend.');
+  if (!state.ready) throw new Error('Voting requires the LinuxAid account service.');
   const userId = requireUserId();
   const { data:existing, error:lookupError } = await state.client.from('community_votes').select('post_id').eq('post_id',postId).eq('user_id',userId).maybeSingle();
   if (lookupError) throw lookupError;
@@ -322,7 +326,7 @@ export async function loadCommunityReplies(postId) {
 }
 
 export async function saveCommunityReply(postId, body) {
-  if (!state.ready) throw new Error('Replies require the Supabase backend.');
+  if (!state.ready) throw new Error('Replies require the LinuxAid account service.');
   const authorId = requireUserId();
   const { data, error } = await state.client.from('community_replies').insert({
     post_id:postId,
@@ -347,7 +351,7 @@ export async function markNotificationRead(id) {
 }
 
 export async function uploadAvatar(file) {
-  if (!state.ready) throw new Error('Avatar uploads require the Supabase backend.');
+  if (!state.ready) throw new Error('Avatar uploads require the LinuxAid account service.');
   const userId = requireUserId();
   if (!file || !String(file.type || '').startsWith('image/')) throw new Error('Choose an image file.');
   if (file.size > 2 * 1024 * 1024) throw new Error('Avatar images must be 2 MB or smaller.');
@@ -362,7 +366,7 @@ export async function uploadAvatar(file) {
 }
 
 export async function invokeBackendFunction(name, body = {}) {
-  if (!state.ready) throw new Error('Supabase Edge Functions are not configured.');
+  if (!state.ready) throw new Error('LinuxAid server functions are not configured.');
   const { data, error } = await state.client.functions.invoke(name, { body });
   if (error) throw error;
   return data;
