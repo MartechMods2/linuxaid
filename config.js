@@ -1,4 +1,4 @@
-// LinuxAid V9 theme bootstrap: light is the default unless the user explicitly chose otherwise.
+// LinuxAid theme bootstrap: light is the default unless the user explicitly chose otherwise.
 (() => {
   try {
     const stored = localStorage.getItem('linuxaid-theme-mode') || localStorage.getItem('linuxaid-theme') || 'light';
@@ -38,6 +38,7 @@ window.LINUXAID_CONFIG = {
   auth: {
     emailEnabled: true,
     googleEnabled: true,
+    githubEnabled: true,
     magicLinkEnabled: true,
     requireEmailVerification: true,
     providerLabel: 'LinuxAid Account'
