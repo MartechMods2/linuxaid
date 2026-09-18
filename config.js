@@ -87,7 +87,8 @@ Promise.all([
   import('./js/brand.js'),
   import('./js/runtimeV5.js'),
   import('./js/v8Enhancements.js'),
-  import('./js/themeV9.js?v=9.0')
+  import('./js/themeV9.js?v=9.0'),
+  import('./js/sessionSecurityV9.js?v=9.0')
 ]).then(modules => {
   const brand = modules[7];
   brand?.applyLinuxAidBranding?.();
