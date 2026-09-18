@@ -19,6 +19,7 @@ test('auth client uses Supabase and supports captcha tokens',()=>{
   assert.match(js,/signInWithOtp/);
   assert.match(js,/resetPasswordForEmail/);
   assert.match(js,/provider:'github'/);
+  assert.match(js,/user:email/);
 });
 
 test('public config exposes only browser-safe Turnstile key and never server secrets',()=>{
@@ -44,4 +45,13 @@ test('account page offers Google and GitHub without public build labels',()=>{
   const tools=read('tools.html');
   assert.doesNotMatch(home,/Terminal V\d+/i);
   assert.doesNotMatch(tools,/Terminal V\d+/i);
+});
+
+
+test('OAuth providers do not depend on the email captcha gate',()=>{
+  const page=read('js/authPage.js');
+  const google=page.match(/async function handleGoogle\(\)\{[^\n]+/s)?.[0]||'';
+  const github=page.match(/async function handleGitHub\(\)\{[^\n]+/s)?.[0]||'';
+  assert.doesNotMatch(google,/verifyCaptcha/);
+  assert.doesNotMatch(github,/verifyCaptcha/);
 });
