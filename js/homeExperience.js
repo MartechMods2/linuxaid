@@ -1,4 +1,6 @@
 import { COMMAND_CATALOG } from './commandCatalog.js';
+import { getProgressSummary } from './progress.js';
+import { rankFromXp } from './ranks.js';
 
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
@@ -49,6 +51,22 @@ function setupDailySpark(){
   if(askButton)askButton.href=`dashboard.html?mode=explain&ask=${encodeURIComponent(`Explain this Linux command safely: ${example}`)}#assistant`;
 }
 
+function setupResume(){
+  const root=$('#homeResume');if(!root)return;
+  const progress=getProgressSummary();
+  const hasProgress=(progress.xp||0)>0||(progress.learnedCommands?.length||0)>0||(progress.quizzesCompleted||0)>0||(progress.streakDays||0)>0;
+  if(!hasProgress)return;
+  const rank=rankFromXp(progress.xp||0);
+  root.hidden=false;
+  $('#homeResumeTitle').textContent=`Welcome back — ${rank.current.name}`;
+  $('#homeResumeText').textContent=progress.streakDays>0
+    ?`You are on a ${progress.streakDays}-day learning streak. Keep the momentum with one small activity.`
+    :'Your LinuxAid progress is waiting. Pick up with a quick activity.';
+  $('#homeResumeXp').textContent=`${progress.xp||0} XP`;
+  $('#homeResumeCommands').textContent=`${progress.learnedCommands?.length||0} commands explored`;
+  $('#homeResumeQuizzes').textContent=`${progress.quizzesCompleted||0} quiz rounds`;
+}
+
 function setupSurprise(){
   const button=$('#surpriseMe');if(!button)return;
   const choices=[
@@ -64,4 +82,4 @@ function setupSurprise(){
   });
 }
 
-setupLegends();setupDailySpark();setupSurprise();
+setupLegends();setupDailySpark();setupResume();setupSurprise();
