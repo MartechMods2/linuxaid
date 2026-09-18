@@ -28,8 +28,8 @@ test('LinuxAid exposes play and AI mentor modes',async()=>{
 });
 
 test('stale product copy is removed from core learning surfaces',async()=>{
-  const [home,labs]=await Promise.all([readFile('index.html','utf8'),readFile('labs.html','utf8')]);
-  assert.doesNotMatch(home,/Terminal V\d+/i);
+  const [home,labs,dock,engine,legacy]=await Promise.all([readFile('index.html','utf8'),readFile('labs.html','utf8'),readFile('js/terminalDock.js','utf8'),readFile('js/terminalEngineV8.js','utf8'),readFile('app.js','utf8')]);
+  for(const source of [home,dock,engine,legacy])assert.doesNotMatch(source,/Terminal V\d+/i);
   assert.match(home,/Practise in the terminal/i);
   assert.doesNotMatch(labs,/courses\.html/);
   assert.match(labs,/play\.html/);
