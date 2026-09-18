@@ -4,11 +4,11 @@ import { readFile, access } from 'node:fs/promises';
 
 const REQUIRED_PAGES = [
   'index.html','dashboard.html','linux.html','labs.html','tools.html',
-  'community.html','people.html','messages.html','rankings.html','profile.html','auth.html','offline.html','404.html'
+  'community.html','people.html','messages.html','rankings.html','play.html','profile.html','auth.html','offline.html','404.html'
 ];
 
 test('product pages and PWA assets exist', async () => {
-  for (const path of [...REQUIRED_PAGES,'manifest.webmanifest','service-worker.js','product.css','social-v7.css']) {
+  for (const path of [...REQUIRED_PAGES,'manifest.webmanifest','service-worker.js','product.css','social-v7.css','play.css','ai-v10.css']) {
     await assert.doesNotReject(() => access(path), `missing ${path}`);
   }
 });
@@ -22,7 +22,7 @@ test('public config keeps insecure browser AI disabled', async () => {
 
 test('service worker app shell includes core LinuxAid routes', async () => {
   const sw = await readFile('service-worker.js','utf8');
-  for (const path of ['labs.html','tools.html','community.html','people.html','messages.html','rankings.html','offline.html']) {
+  for (const path of ['labs.html','tools.html','community.html','people.html','messages.html','rankings.html','play.html','offline.html']) {
     assert.match(sw, new RegExp(path.replace('.','\\.')));
   }
   assert.doesNotMatch(sw, /supabase\.co'\]/);

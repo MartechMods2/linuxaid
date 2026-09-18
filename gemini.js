@@ -24,14 +24,17 @@ function readAnswer(result) {
   ).trim();
 }
 
-async function queryBackendFunction(prompt, config, history) {
+async function queryBackendFunction(prompt, config, history, options = {}) {
   await initBackend(config);
   const status = getBackendStatus();
   if (!status.ready) throw new Error('LinuxAid AI service is not configured.');
   const functionName = aiConfig(config).edgeFunction || 'linuxaid-ai';
   const requestBody = {
     prompt:String(prompt).slice(0,6000),
-    history:normalizeHistory(history)
+    history:normalizeHistory(history),
+    mode:String(options.mode || 'explain').slice(0,24),
+    distro:String(options.distro || '').slice(0,40),
+    level:String(options.level || 'beginner').slice(0,20)
   };
 
   let result;
@@ -49,7 +52,7 @@ async function queryBackendFunction(prompt, config, history) {
   return answer;
 }
 
-async function queryProxy(prompt, config, history) {
+async function queryProxy(prompt, config, history, options = {}) {
   const proxyUrl = aiConfig(config).proxyUrl || config.aiProxyUrl;
   if (!proxyUrl) throw new Error('LinuxAid AI proxy is not configured.');
   const controller = new AbortController();
@@ -58,7 +61,7 @@ async function queryProxy(prompt, config, history) {
     const response = await fetch(proxyUrl, {
       method:'POST',
       headers:{ 'Content-Type':'application/json' },
-      body:JSON.stringify({ prompt:String(prompt).slice(0,6000), history:normalizeHistory(history) }),
+      body:JSON.stringify({ prompt:String(prompt).slice(0,6000), history:normalizeHistory(history), mode:options.mode||'explain', distro:options.distro||'', level:options.level||'beginner' }),
       signal:controller.signal
     });
     const result = await response.json().catch(() => ({}));
@@ -127,11 +130,11 @@ export function getAIStatus(config = {}) {
   return { ready:false, mode:'local-fallback', provider:'local' };
 }
 
-export async function queryAI(prompt, config = {}, history = []) {
+export async function queryAI(prompt, config = {}, history = [], options = {}) {
   const ai = aiConfig(config);
   const supabaseConfigured = Boolean(config.backend?.supabase?.url && (config.backend?.supabase?.publishableKey || config.backend?.supabase?.anonKey));
-  if (supabaseConfigured) return queryBackendFunction(prompt, config, history);
-  if (ai.proxyUrl || config.aiProxyUrl) return queryProxy(prompt, config, history);
+  if (supabaseConfigured) return queryBackendFunction(prompt, config, history, options);
+  if (ai.proxyUrl || config.aiProxyUrl) return queryProxy(prompt, config, history, options);
   if (ai.allowInsecureBrowserAI !== true) throw new Error('Secure AI backend is not configured. Browser API keys are disabled.');
   const provider = String(ai.provider || 'gemini').toLowerCase();
   if (provider === 'openai') return queryOpenAIDirect(prompt, config, history);

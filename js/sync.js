@@ -36,6 +36,17 @@ function mergeProgress(local = {}, remote = {}) {
     commandsRun:Math.max(Number(local.commandsRun)||0, Number(remote.commandsRun)||0),
     labsCompleted:Math.max(Number(local.labsCompleted)||0, Number(remote.labsCompleted)||0),
     lessonsCompleted:Math.max(Number(local.lessonsCompleted)||0, Number(remote.lessonsCompleted)||0),
+    quizzesCompleted:Math.max(Number(local.quizzesCompleted)||0, Number(remote.quizzesCompleted)||0),
+    perfectQuizzes:Math.max(Number(local.perfectQuizzes)||0, Number(remote.perfectQuizzes)||0),
+    dailyChallenges:Math.max(Number(local.dailyChallenges)||0, Number(remote.dailyChallenges)||0),
+    gameStats:{
+      plays:Math.max(Number(local.gameStats?.plays)||0,Number(remote.gameStats?.plays)||0),
+      questions:Math.max(Number(local.gameStats?.questions)||0,Number(remote.gameStats?.questions)||0),
+      correct:Math.max(Number(local.gameStats?.correct)||0,Number(remote.gameStats?.correct)||0),
+      bestPercent:Math.max(Number(local.gameStats?.bestPercent)||0,Number(remote.gameStats?.bestPercent)||0)
+    },
+    gameRewardLedger:{ ...(remote.gameRewardLedger||{}), ...(local.gameRewardLedger||{}) },
+    dailyRewardKeys:[...new Set([...(remote.dailyRewardKeys||[]),...(local.dailyRewardKeys||[])])].slice(-90),
     streakDays:Math.max(Number(local.streakDays)||0, Number(remote.streakDays)||0),
     learnedCommands:[...new Set([...localCommands,...remoteCommands])],
     achievements:[...new Set([...localAchievements,...remoteAchievements])],

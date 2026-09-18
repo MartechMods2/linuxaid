@@ -13,6 +13,12 @@ const freshProgress = () => ({
   achievements: [],
   labsCompleted: 0,
   lessonsCompleted: 0,
+  quizzesCompleted: 0,
+  perfectQuizzes: 0,
+  dailyChallenges: 0,
+  gameStats: { plays:0, questions:0, correct:0, bestPercent:0 },
+  gameRewardLedger: {},
+  dailyRewardKeys: [],
   streakDays: 0,
   lastActiveDate: null,
   firstSeenAt: new Date().toISOString(),
@@ -51,6 +57,17 @@ export function writeProgress(progress, { silent=false } = {}) {
     commandsRun:Math.max(0, Math.round(Number(progress.commandsRun) || 0)),
     labsCompleted:Math.max(0, Math.round(Number(progress.labsCompleted) || 0)),
     lessonsCompleted:Math.max(0, Math.round(Number(progress.lessonsCompleted) || 0)),
+    quizzesCompleted:Math.max(0, Math.round(Number(progress.quizzesCompleted) || 0)),
+    perfectQuizzes:Math.max(0, Math.round(Number(progress.perfectQuizzes) || 0)),
+    dailyChallenges:Math.max(0, Math.round(Number(progress.dailyChallenges) || 0)),
+    gameStats:{
+      plays:Math.max(0,Math.round(Number(progress.gameStats?.plays)||0)),
+      questions:Math.max(0,Math.round(Number(progress.gameStats?.questions)||0)),
+      correct:Math.max(0,Math.round(Number(progress.gameStats?.correct)||0)),
+      bestPercent:Math.max(0,Math.min(100,Math.round(Number(progress.gameStats?.bestPercent)||0)))
+    },
+    gameRewardLedger:progress.gameRewardLedger && typeof progress.gameRewardLedger === 'object' ? progress.gameRewardLedger : {},
+    dailyRewardKeys:[...new Set((progress.dailyRewardKeys || []).map(String))].slice(-90),
     learnedCommands:[...new Set((progress.learnedCommands || []).map(value => String(value).toLowerCase()))].slice(0,250),
     achievements:[...new Set((progress.achievements || []).map(String))].slice(0,100),
     updatedAt:new Date().toISOString()
@@ -77,7 +94,11 @@ function unlockAchievements(progress) {
   if ((progress.commandsRun || 0) >= 100) set.add('Terminal Regular');
   if ((progress.streakDays || 0) >= 7) set.add('Seven Day Streak');
   if ((progress.labsCompleted || 0) >= 5) set.add('Lab Solver');
-  if ((progress.lessonsCompleted || 0) >= 10) set.add('Course Builder');
+  if ((progress.lessonsCompleted || 0) >= 10) set.add('Skill Builder');
+  if ((progress.quizzesCompleted || 0) >= 1) set.add('Quiz Starter');
+  if ((progress.perfectQuizzes || 0) >= 1) set.add('Perfect Round');
+  if ((progress.quizzesCompleted || 0) >= 10) set.add('Command Gamer');
+  if ((progress.dailyChallenges || 0) >= 7) set.add('Daily Challenger');
   if ((progress.xp || 0) >= 1000) set.add('LinuxAid 1K');
   progress.achievements = [...set];
   return progress;
@@ -104,6 +125,46 @@ export function awardXP(amount, reason='learning', counters={}) {
   if (counters.lesson) progress.lessonsCompleted = (progress.lessonsCompleted || 0) + 1;
   progress.lastRewardReason = String(reason).slice(0,120);
   return writeProgress(unlockAchievements(progress));
+}
+
+export function recordGameResult({ score=0, total=1, mode='quick', dailyKey='', reason='LinuxAid Play' } = {}) {
+  const safeTotal=Math.max(1,Math.min(50,Math.round(Number(total)||1)));
+  const safeScore=Math.max(0,Math.min(safeTotal,Math.round(Number(score)||0)));
+  const percent=Math.round((safeScore/safeTotal)*100);
+  const progress=touchStreak(readProgress());
+  const stats=progress.gameStats && typeof progress.gameStats==='object' ? progress.gameStats : {};
+  progress.gameStats={
+    plays:(Number(stats.plays)||0)+1,
+    questions:(Number(stats.questions)||0)+safeTotal,
+    correct:(Number(stats.correct)||0)+safeScore,
+    bestPercent:Math.max(Number(stats.bestPercent)||0,percent)
+  };
+  progress.quizzesCompleted=(progress.quizzesCompleted||0)+1;
+  if(percent===100) progress.perfectQuizzes=(progress.perfectQuizzes||0)+1;
+
+  const today=dayKey();
+  const ledger=progress.gameRewardLedger && typeof progress.gameRewardLedger==='object' ? progress.gameRewardLedger : {};
+  const earnedToday=Math.max(0,Number(ledger[today])||0);
+  const baseReward=Math.max(4,Math.min(28,6+(safeScore*3)));
+  let reward=Math.max(0,Math.min(baseReward,120-earnedToday));
+
+  if(dailyKey){
+    const keys=new Set(progress.dailyRewardKeys||[]);
+    if(!keys.has(dailyKey)){
+      keys.add(dailyKey);
+      progress.dailyChallenges=(progress.dailyChallenges||0)+1;
+      reward+=25;
+      progress.dailyRewardKeys=[...keys].slice(-90);
+    }
+  }
+
+  ledger[today]=Math.min(145,earnedToday+reward);
+  progress.gameRewardLedger=Object.fromEntries(Object.entries(ledger).slice(-14));
+  progress.xp=(progress.xp||0)+reward;
+  progress.lastRewardReason=String(reason).slice(0,120);
+  const result=writeProgress(unlockAchievements(progress));
+  if(typeof document!=='undefined') document.dispatchEvent(new CustomEvent('linuxaid:game-result',{detail:{score:safeScore,total:safeTotal,percent,reward,mode,dailyKey,progress:result}}));
+  return { progress:result, reward, percent };
 }
 
 export function calculateRoadmap(progress = readProgress()) {

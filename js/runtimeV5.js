@@ -20,8 +20,8 @@ function removeCoursePromises(){
       const title=card.querySelector('h2,h3,h4'),body=card.querySelector('p');
       if(title)title.textContent='Command mastery & Linux challenges';
       if(body)body.textContent='Build confidence through safe terminal practice, troubleshooting tools, ranks and hands-on Linux challenges.';
-      link.href='rankings.html';
-      link.textContent='View ranks';
+      link.href='play.html';
+      link.textContent='Start a challenge';
     }else link.remove();
   });
   document.querySelectorAll('.nav-links a').forEach(link=>{if(/course/i.test(link.textContent||''))link.remove()});
@@ -66,8 +66,8 @@ function normalizeNavigation(){
   const page=document.body.dataset.page||'';
   const social=['community','people','messages'].includes(page);
   const desired=social
-    ?[['Home','index.html'],['Dashboard','dashboard.html'],['Community','community.html'],['People','people.html'],['Messages','messages.html'],['Rankings','rankings.html']]
-    :[['Home','index.html'],['Dashboard','dashboard.html'],['Labs','labs.html'],['Tools','tools.html'],['Community','community.html'],['Rankings','rankings.html']];
+    ?[['Home','index.html'],['Dashboard','dashboard.html'],['Play','play.html'],['Community','community.html'],['People','people.html'],['Messages','messages.html'],['Rankings','rankings.html']]
+    :[['Home','index.html'],['Dashboard','dashboard.html'],['Play','play.html'],['Labs','labs.html'],['Tools','tools.html'],['Community','community.html'],['Rankings','rankings.html']];
   document.querySelectorAll('.nav-links').forEach(nav=>{
     nav.replaceChildren();
     desired.forEach(([label,href])=>{
