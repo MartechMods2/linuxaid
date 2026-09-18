@@ -1,6 +1,14 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const SYSTEM_PROMPT = `You are LinuxAid, a beginner-friendly Linux tutor. Explain Linux concepts step by step. Prefer safe read-only inspection before system changes. Clearly warn before privileged or destructive commands. Distinguish distro-specific commands. Never pretend a browser simulator changed a real machine. Keep answers practical, accurate and concise.`;
+const SYSTEM_PROMPT = `You are LinuxAid, a safety-first Linux mentor. Help users understand what is happening before suggesting changes. Prefer read-only inspection, state assumptions, distinguish distro-specific commands, and warn clearly before privileged, destructive, security-sensitive or service-impacting actions. Never pretend a browser simulator changed a real machine. Give practical commands only when they help, explain what each command does, and include a verification step after changes. Keep answers focused, accurate and friendly.`;
+
+const MODE_GUIDANCE: Record<string,string> = {
+  explain:'Explain the concept simply first, then give one practical example and a short safety note when relevant.',
+  troubleshoot:'Use an inspect → interpret → minimal change → verify workflow. Ask for missing evidence when the diagnosis depends on it. Do not jump straight to destructive fixes.',
+  review:'Review the exact command token by token. State what it reads or changes, privilege needs, likely side effects, risk level, and a safer inspection/dry-run alternative when one exists.',
+  coach:'Act like a Linux learning coach. Give the learner a small next-step plan with 2–4 concrete practice tasks and explain why each matters.',
+  quiz:'Quiz the learner on the topic one question at a time. Do not reveal the answer until the learner attempts it; then explain the result and continue if asked.'
+};
 const DEFAULT_TIMEOUT_MS = 18_000;
 
 const allowedOrigins = new Set(
@@ -212,11 +220,20 @@ Deno.serve(async request => {
 
   const provider = selectedProvider();
   if (payload?.action === 'status') {
-    return json(request, provider ? 200 : 503, { ready:Boolean(provider) });
+    return json(request, provider ? 200 : 503, { ready:Boolean(provider), capabilities:['explain','troubleshoot','review','coach','quiz'] });
   }
 
   const prompt = String(payload?.prompt || '').replace(/\u0000/g,'').trim().slice(0,6000);
   if (!prompt) return json(request, 400, { error:'Prompt is required.' });
+  const mode = Object.hasOwn(MODE_GUIDANCE, String(payload?.mode || 'explain')) ? String(payload?.mode || 'explain') : 'explain';
+  const distro = String(payload?.distro || '').replace(/[^a-zA-Z0-9!+._ -]/g,'').trim().slice(0,40);
+  const level = ['beginner','intermediate','advanced'].includes(String(payload?.level || '').toLowerCase()) ? String(payload.level).toLowerCase() : 'beginner';
+  const context = [
+    `Mode: ${mode}. ${MODE_GUIDANCE[mode]}`,
+    `Learner level: ${level}.`,
+    distro ? `Primary distro/context: ${distro}. Prefer commands appropriate to it; mention when a command differs elsewhere.` : 'Primary distro is unknown. Avoid assuming a package manager when it matters.',
+    `User request: ${prompt}`
+  ].join('\n');
   const history = normalizeHistory(payload?.history);
   const dailyLimit = Math.max(1, Math.min(500, Number(Deno.env.get('LINUXAID_AI_DAILY_LIMIT') || 40)));
 
@@ -228,8 +245,8 @@ Deno.serve(async request => {
     }
 
     if (!provider) return json(request, 503, { error:'Remote LinuxAid AI is not configured yet.' });
-    const answer = await askProvider(provider, prompt, history);
-    return json(request, 200, { answer, usage:{ requestsToday:Number(usage || 1), dailyLimit } });
+    const answer = await askProvider(provider, context, history);
+    return json(request, 200, { answer, usage:{ requestsToday:Number(usage || 1), dailyLimit }, meta:{ mode, level, distro:distro || null } });
   } catch (error) {
     const timedOut = error instanceof DOMException && error.name === 'AbortError';
     const providerError = error instanceof ProviderError ? error : null;
