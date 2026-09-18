@@ -32,7 +32,7 @@
       <a href="index.html#features">Features</a>
     </nav>
     <div class="cta-group">
-      <button class="button primary" id="authButton">Sign in</button>
+      <a class="button primary" href="auth.html">Sign in</a>
       <a class="button primary" href="dashboard.html">Open Dashboard</a>
       <button class="button" id="themeToggle"><i class="fas fa-moon"></i></button>
     </div>
@@ -132,20 +132,6 @@
     </section>
   </main>
 
-  <div class="auth-overlay" id="authOverlay">
-    <div class="auth-modal glass">
-      <button class="auth-close" id="closeAuth"><i class="fas fa-times"></i></button>
-      <h3>Sign in to LinuxAid</h3>
-      <p>Use our secure authentication flow to access chat history, personalized roadmaps, and safe learning tools.</p>
-      <div class="auth-form">
-        <button class="button primary" id="googleSignIn"><i class="fab fa-google"></i> Continue with Google</button>
-        <input type="email" id="authEmail" placeholder="Email address" />
-        <input type="password" id="authPassword" placeholder="Password" />
-        <button class="button" id="emailSignIn">Sign in with email</button>
-        <p style="color:var(--muted);font-size:0.92rem;text-align:center;">This demo uses local browser session state to simulate Firebase Authentication.</p>
-      </div>
-    </div>
-  </div>
   <button class="back-to-top" id="backToTop"><i class="fas fa-arrow-up"></i></button>
   <script type="module" src="app.js"></script>
 </body>
