@@ -6,7 +6,7 @@ const APP_SHELL=[
   './styles.css','./product.css','./product-v8.css','./ui-v9.css','./hero-motion.css','./social-v7.css','./play.css','./ai-v10.css',
   './app.js','./config.js','./gemini.js','./backend.js','./favicon.svg','./manifest.webmanifest',
   './js/siteEnhancements.js','./js/v8Enhancements.js','./js/pageBasics.js','./js/navExtras.js',
-  './js/heroMotion.js','./js/themeV9.js','./js/sessionSecurityV9.js','./js/quizBank.js','./js/playPage.js','./js/terminalEngine.js',
+  './js/heroMotion.js','./js/themeV9.js','./js/sessionSecurityV9.js','./js/progressionV10.js','./js/quizBank.js','./js/playPage.js','./js/terminalEngine.js',
   './js/terminalEngineV8.js','./js/terminalDock.js','./js/commandCatalog.js','./js/security.js',
   './js/progress.js','./js/learningData.js','./js/linuxTools.js','./js/toolsPage.js','./js/profilePage.js',
   './js/profileSocialV7.js','./js/authPage.js','./js/authClientV5.js','./js/socialApi.js',
