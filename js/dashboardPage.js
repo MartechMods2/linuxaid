@@ -173,7 +173,11 @@ $('resetFilters')?.addEventListener('click',()=>{if($('commandSearch'))$('comman
 
 if($('aiDistro'))$('aiDistro').value=aiDistro;
 if($('aiLevel'))$('aiLevel').value=aiLevel;
-applyMode(aiMode);setAuth(user);renderCommands();await loadChat();renderCommunity();
+const aiParams=new URLSearchParams(location.search);
+if(MODE_INFO[aiParams.get('mode')])aiMode=aiParams.get('mode');
+applyMode(aiMode);
+if(aiParams.get('ask')&&$('chatInput'))$('chatInput').value=clampText(aiParams.get('ask'),6000);
+setAuth(user);renderCommands();await loadChat();renderCommunity();
 onAuthStateChangedListener(async next=>{const changed=next?.uid!==user?.uid;setAuth(next);if(changed)await loadChat()});
 const summary=getProgressSummary();
 if($('learningStatus'))$('learningStatus').textContent=`${summary.xp} XP • ${summary.learnedCommands.length} commands • ${summary.streakDays} day streak • ${summary.quizzesCompleted||0} quiz rounds`;
