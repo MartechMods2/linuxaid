@@ -366,37 +366,85 @@ export async function uploadAvatar(file) {
 }
 
 export async function invokeBackendFunction(name, body = {}) {
-  if (!state.ready) throw new Error('LinuxAid server functions are not configured.');
-  const { data, error } = await state.client.functions.invoke(name, { body });
+  if (!state.ready || !state.client) throw new Error('LinuxAid server functions are not configured.');
 
-  if (error) {
-    let message = error.message || 'LinuxAid server request failed.';
-    let code = 'EDGE_FUNCTION_ERROR';
-    let status = Number(error?.context?.status || 0) || 0;
+  const source = supabaseConfig(state.config || {});
+  const baseUrl = String(source.url || '').replace(/\/$/,'');
+  const publicKey = source.publishableKey || source.anonKey || '';
+  if (!baseUrl || !publicKey) throw new Error('LinuxAid server connection is incomplete.');
 
+  async function currentSession(refresh = false) {
+    if (refresh) {
+      const refreshed = await state.client.auth.refreshSession();
+      if (refreshed.error) throw refreshed.error;
+      return refreshed.data?.session || null;
+    }
+    const { data, error } = await state.client.auth.getSession();
+    if (error) throw error;
+    return data?.session || null;
+  }
+
+  async function request(session) {
+    if (!session?.access_token) {
+      const error = new Error('Sign in again to use LinuxAid AI.');
+      error.name = 'LinuxAidFunctionError';
+      error.code = 'AI_SESSION_REQUIRED';
+      error.status = 401;
+      throw error;
+    }
+
+    const controller = new AbortController();
+    const timeoutMs = Math.max(8000, Math.min(45000, Number(state.config?.ai?.requestTimeoutMs || 25000)));
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    let response;
     try {
-      const response = error?.context;
-      if (response && typeof response.clone === 'function') {
-        const payload = await response.clone().json().catch(() => null);
-        if (payload?.error) message = String(payload.error);
-        if (payload?.code) code = String(payload.code);
-        if (!status) status = Number(response.status || 0) || 0;
-      }
-    } catch {}
+      response = await fetch(`${baseUrl}/functions/v1/${encodeURIComponent(name)}`, {
+        method:'POST',
+        mode:'cors',
+        cache:'no-store',
+        credentials:'omit',
+        headers:{
+          'Content-Type':'application/json',
+          'Accept':'application/json',
+          'Authorization':`Bearer ${session.access_token}`,
+          'apikey':publicKey,
+          'X-Client-Info':'linuxaid-web-v9'
+        },
+        body:JSON.stringify(body || {}),
+        signal:controller.signal
+      });
+    } catch (error) {
+      const wrapped = new Error(
+        error?.name === 'AbortError'
+          ? 'LinuxAid AI request timed out. Please retry.'
+          : 'LinuxAid AI could not reach the server. Check your connection and retry.'
+      );
+      wrapped.name = 'LinuxAidFunctionError';
+      wrapped.code = error?.name === 'AbortError' ? 'AI_TIMEOUT' : 'AI_NETWORK_ERROR';
+      wrapped.status = 0;
+      throw wrapped;
+    } finally {
+      clearTimeout(timer);
+    }
 
-    const wrapped = new Error(message);
-    wrapped.name = 'LinuxAidFunctionError';
-    wrapped.code = code;
-    wrapped.status = status;
-    throw wrapped;
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload?.error) {
+      const wrapped = new Error(String(payload?.error || `LinuxAid AI request failed (${response.status}).`));
+      wrapped.name = 'LinuxAidFunctionError';
+      wrapped.code = String(payload?.code || (response.status === 401 ? 'AI_SESSION_INVALID' : 'EDGE_FUNCTION_ERROR'));
+      wrapped.status = response.status;
+      throw wrapped;
+    }
+    return payload;
   }
 
-  if (data?.error) {
-    const wrapped = new Error(String(data.error));
-    wrapped.name = 'LinuxAidFunctionError';
-    wrapped.code = String(data.code || 'EDGE_FUNCTION_ERROR');
-    throw wrapped;
+  let session = await currentSession(false);
+  try {
+    return await request(session);
+  } catch (error) {
+    if (error?.status !== 401 && error?.code !== 'AI_SESSION_INVALID') throw error;
+    session = await currentSession(true);
+    return request(session);
   }
-
-  return data;
 }
