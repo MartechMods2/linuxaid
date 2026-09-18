@@ -23,7 +23,7 @@
       <div>
         <div class="eyebrow">Your Linux learning identity</div>
         <h1>Build skills. Keep progress.</h1>
-        <p>Create a free LinuxAid account to sync your profile, AI chat history, course progress and lab achievements across devices.</p>
+        <p>Create a free LinuxAid account to sync your profile, AI chat history, quiz progress, lab achievements and preferences across devices.</p>
         <div class="hero-badges" style="margin-top:24px">
           <span class="badge-pill"><i class="fas fa-shield-halved"></i> Secure account access</span>
           <span class="badge-pill"><i class="fas fa-cloud-arrow-up"></i> Cross-device sync</span>
@@ -44,7 +44,10 @@
           <button class="auth-tab" type="button" data-auth-tab="create" role="tab" aria-selected="false">Create account</button>
         </div>
 
-        <button class="button primary" id="authGoogle" type="button" style="width:100%"><i class="fab fa-google"></i> Continue with Google</button>
+        <div class="auth-oauth-grid" aria-label="Continue with a connected account">
+          <button class="button auth-provider-button" id="authGoogle" type="button"><i class="fab fa-google"></i> Continue with Google</button>
+          <button class="button auth-provider-button auth-provider-github" id="authGitHub" type="button"><i class="fab fa-github"></i> Continue with GitHub</button>
+        </div>
         <div class="auth-divider">or use email</div>
 
         <form id="authForm" class="auth-form-grid" novalidate>
@@ -75,7 +78,7 @@
           <button class="button" id="demoMode" type="button">Continue in demo mode</button>
         </div>
 
-        <p style="margin:20px 0 0;color:var(--muted);font-size:.82rem;line-height:1.65">LinuxAid never stores your password itself. Authentication is handled by the connected backend provider. LinuxAid account access supports email verification, password recovery, Google OAuth, protected member data and optional browser-only demo mode.</p>
+        <p style="margin:20px 0 0;color:var(--muted);font-size:.82rem;line-height:1.65">LinuxAid never stores your password itself. Authentication is handled by the connected backend provider. LinuxAid account access supports email verification, password recovery, Google and GitHub sign-in, protected member data and optional browser-only demo mode.</p>
       </div>
     </section>
   </main>
