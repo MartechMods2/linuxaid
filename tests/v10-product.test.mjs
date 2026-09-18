@@ -13,7 +13,7 @@ test('LinuxAid Play has a meaningful question bank',()=>{
   }
 });
 
-test('V10 exposes play and AI mentor modes',async()=>{
+test('LinuxAid exposes play and AI mentor modes',async()=>{
   const [play,dashboard,edge]=await Promise.all([
     readFile('play.html','utf8'),
     readFile('dashboard.html','utf8'),
@@ -29,13 +29,13 @@ test('V10 exposes play and AI mentor modes',async()=>{
 
 test('stale product copy is removed from core learning surfaces',async()=>{
   const [home,labs]=await Promise.all([readFile('index.html','utf8'),readFile('labs.html','utf8')]);
-  assert.doesNotMatch(home,/Terminal V2/);
-  assert.match(home,/Terminal V8/);
+  assert.doesNotMatch(home,/Terminal V\d+/i);
+  assert.match(home,/Practise in the terminal/i);
   assert.doesNotMatch(labs,/courses\.html/);
   assert.match(labs,/play\.html/);
 });
 
-test('V10 game files exist',async()=>{
+test('LinuxAid game files exist',async()=>{
   for(const path of ['play.html','play.css','js/playPage.js','js/quizBank.js','ai-v10.css']){
     await assert.doesNotReject(()=>access(path),`missing ${path}`);
   }
