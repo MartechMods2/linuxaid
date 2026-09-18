@@ -416,3 +416,24 @@ input:focus,textarea:focus,select:focus,.form-control:focus,.social-search:focus
 @media(prefers-reduced-motion:reduce){
   *,:before,:after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+/* AI availability */
+.ai-live-status{
+  display:inline-flex;align-items:center;gap:7px;margin-top:8px;padding:7px 10px;
+  border:1px solid var(--border);border-radius:999px;background:var(--surface-2);
+  color:var(--muted);font-size:.78rem;font-weight:750
+}
+.ai-live-status::before{content:'';width:8px;height:8px;border-radius:50%;background:#94a3b8}
+.ai-live-status[data-state="online"]{color:color-mix(in srgb,var(--user-accent) 78%,var(--text));border-color:color-mix(in srgb,var(--user-accent) 30%,var(--border))}
+.ai-live-status[data-state="online"]::before{background:var(--user-accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--user-accent) 12%,transparent)}
+.ai-live-status[data-state="offline"]{color:#b45309}.ai-live-status[data-state="offline"]::before{background:#f59e0b}
+.ai-live-status[data-state="locked"]::before{background:#64748b}
+
+/* Session security notice */
+.session-security-toast{
+  position:fixed;right:18px;bottom:84px;z-index:16000;width:min(360px,calc(100% - 36px));
+  padding:13px 15px;border:1px solid var(--border);border-radius:14px;
+  background:var(--panel-strong);color:var(--text);box-shadow:var(--la-shadow-dark);
+  font-size:.86rem;line-height:1.5
+}
+@media(max-width:720px){.session-security-toast{left:12px;right:12px;bottom:76px;width:auto}}
