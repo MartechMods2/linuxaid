@@ -36,6 +36,8 @@ function upgradeLegacyAvatarUpload(){
   if(!input||input.closest('.upload-zone'))return;
   const parent=input.parentElement;
   if(!parent)return;
+  const legacyLabel=input.closest('label');
+  const host=legacyLabel?.parentElement||parent;
   const zone=document.createElement('label');
   zone.className='upload-zone';
   zone.htmlFor='avatarUpload';
@@ -48,8 +50,9 @@ function upgradeLegacyAvatarUpload(){
   const button=document.createElement('span');
   button.className='upload-zone-button';
   button.textContent='Browse image';
-  parent.insertBefore(zone,input);
+  host.insertBefore(zone,legacyLabel||input);
   zone.append(icon,copy,button,input);
+  if(legacyLabel&&legacyLabel!==zone)legacyLabel.remove();
 }
 
 function polishEmptyCommunity(){
