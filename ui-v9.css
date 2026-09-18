@@ -444,3 +444,18 @@ input:focus,textarea:focus,select:focus,.form-control:focus,.social-search:focus
 /* Branded fast menu control */
 .mobile-menu-button{color:var(--user-accent)!important;background:color-mix(in srgb,var(--user-accent) 7%,var(--surface-1))!important;border-color:color-mix(in srgb,var(--user-accent) 24%,var(--border))!important}
 .navbar.nav-open .mobile-menu-button{background:var(--user-accent)!important;color:var(--user-accent-contrast)!important;border-color:transparent!important}
+
+/* Legal/trust pages */
+.legal-shell{
+  width:min(860px,100%);
+  margin:calc(var(--la-header-h) + 42px) auto 56px;
+  padding:clamp(22px,4vw,42px);
+  border:1px solid var(--border);
+  border-radius:22px;
+  background:var(--panel);
+  box-shadow:var(--la-shadow)
+}
+.legal-shell h1{font-size:clamp(2.35rem,6vw,4.5rem);line-height:1;letter-spacing:-.05em;margin:.2em 0 .55em}
+.legal-shell h2{font-size:1.2rem;margin:1.8em 0 .5em}
+.legal-shell p{color:var(--muted);line-height:1.75}
+@media(max-width:720px){.legal-shell{margin-top:calc(var(--la-header-h) + 20px);margin-bottom:30px;padding:20px 16px;border-radius:17px}}
