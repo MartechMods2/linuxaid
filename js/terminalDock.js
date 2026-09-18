@@ -14,6 +14,8 @@ if (!excludedPages.has(document.body.dataset.page || '')) {
   const backdrop = document.createElement('div');
   backdrop.className = 'terminal-dock-backdrop';
   backdrop.id = 'terminalDockBackdrop';
+  backdrop.hidden = true;
+  backdrop.setAttribute('aria-hidden','true');
   backdrop.innerHTML = `
     <section class="terminal-dock" role="dialog" aria-modal="true" aria-label="LinuxAid Terminal Lab">
       <header class="terminal-dock-head">
@@ -87,7 +89,10 @@ if (!excludedPages.has(document.body.dataset.page || '')) {
 
   function open(prefill='') {
     lastFocus = document.activeElement;
+    backdrop.hidden = false;
+    backdrop.setAttribute('aria-hidden','false');
     backdrop.classList.add('open');
+    document.documentElement.classList.add('terminal-open');
     document.body.style.overflow = 'hidden';
     welcome();
     if (prefill) input.value = prefill;
@@ -96,6 +101,9 @@ if (!excludedPages.has(document.body.dataset.page || '')) {
 
   function close() {
     backdrop.classList.remove('open');
+    backdrop.setAttribute('aria-hidden','true');
+    backdrop.hidden = true;
+    document.documentElement.classList.remove('terminal-open');
     document.body.style.overflow = '';
     if (lastFocus instanceof HTMLElement) lastFocus.focus({ preventScroll:true });
   }

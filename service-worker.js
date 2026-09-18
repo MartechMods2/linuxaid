@@ -1,4 +1,4 @@
-const CACHE_NAME='linuxaid-v9.0';
+const CACHE_NAME='linuxaid-v9.0.1';
 const APP_SHELL=[
   './','./index.html','./dashboard.html','./linux.html','./install.html','./labs.html','./tools.html',
   './profile.html','./auth.html','./community.html','./people.html','./messages.html','./rankings.html',
