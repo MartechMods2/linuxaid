@@ -28,8 +28,8 @@ test('play and AI mentor modes are exposed',async()=>{
 });
 
 test('stale product copy is removed from core learning surfaces',async()=>{
-  const [home,labs]=await Promise.all([readFile('index.html','utf8'),readFile('labs.html','utf8')]);
-  assert.doesNotMatch(home,/Terminal V\d+/);
+  const [home,labs,dock,engine,legacy]=await Promise.all([readFile('index.html','utf8'),readFile('labs.html','utf8'),readFile('js/terminalDock.js','utf8'),readFile('js/terminalEngineV8.js','utf8'),readFile('app.js','utf8')]);
+  for(const source of [home,dock,engine,legacy])assert.doesNotMatch(source,/LinuxAid Terminal V\d+|Terminal V\d+/);
   assert.match(home,/Practise in the Linux terminal/);
   assert.doesNotMatch(labs,/courses\.html/);
   assert.match(labs,/play\.html/);
