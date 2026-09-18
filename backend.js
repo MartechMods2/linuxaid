@@ -368,6 +368,35 @@ export async function uploadAvatar(file) {
 export async function invokeBackendFunction(name, body = {}) {
   if (!state.ready) throw new Error('LinuxAid server functions are not configured.');
   const { data, error } = await state.client.functions.invoke(name, { body });
-  if (error) throw error;
+
+  if (error) {
+    let message = error.message || 'LinuxAid server request failed.';
+    let code = 'EDGE_FUNCTION_ERROR';
+    let status = Number(error?.context?.status || 0) || 0;
+
+    try {
+      const response = error?.context;
+      if (response && typeof response.clone === 'function') {
+        const payload = await response.clone().json().catch(() => null);
+        if (payload?.error) message = String(payload.error);
+        if (payload?.code) code = String(payload.code);
+        if (!status) status = Number(response.status || 0) || 0;
+      }
+    } catch {}
+
+    const wrapped = new Error(message);
+    wrapped.name = 'LinuxAidFunctionError';
+    wrapped.code = code;
+    wrapped.status = status;
+    throw wrapped;
+  }
+
+  if (data?.error) {
+    const wrapped = new Error(String(data.error));
+    wrapped.name = 'LinuxAidFunctionError';
+    wrapped.code = String(data.code || 'EDGE_FUNCTION_ERROR');
+    throw wrapped;
+  }
+
   return data;
 }
