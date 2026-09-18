@@ -1,11 +1,11 @@
-const CACHE_NAME='linuxaid-v10.0';
+const CACHE_NAME='linuxaid-cache-home-refresh';
 const APP_SHELL=[
   './','./index.html','./dashboard.html','./linux.html','./install.html','./labs.html','./tools.html',
-  './profile.html','./auth.html','./community.html','./people.html','./messages.html','./rankings.html','./play.html',
+  './profile.html','./auth.html','./community.html','./people.html','./messages.html','./rankings.html','./play.html','./about.html',
   './support.html','./privacy.html','./terms.html','./security.html','./acceptable-use.html','./offline.html','./404.html',
-  './styles.css','./product.css','./product-v8.css','./ui-v9.css','./hero-motion.css','./social-v7.css','./play.css','./ai-v10.css',
+  './styles.css','./product.css','./product-v8.css','./ui-v9.css','./hero-motion.css','./social-v7.css','./play.css','./ai-v10.css','./experience.css',
   './app.js','./config.js','./gemini.js','./backend.js','./favicon.svg','./manifest.webmanifest',
-  './js/siteEnhancements.js','./js/v8Enhancements.js','./js/pageBasics.js','./js/navExtras.js',
+  './js/siteEnhancements.js','./js/v8Enhancements.js','./js/pageBasics.js','./js/navExtras.js','./js/homeExperience.js',
   './js/heroMotion.js','./js/themeV9.js','./js/sessionSecurityV9.js','./js/progressionV10.js','./js/quizBank.js','./js/playPage.js','./js/terminalEngine.js',
   './js/terminalEngineV8.js','./js/terminalDock.js','./js/commandCatalog.js','./js/security.js',
   './js/progress.js','./js/learningData.js','./js/linuxTools.js','./js/toolsPage.js','./js/profilePage.js',
