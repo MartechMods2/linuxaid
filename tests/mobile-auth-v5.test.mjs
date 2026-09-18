@@ -18,6 +18,8 @@ test('auth client uses Supabase and supports captcha tokens',()=>{
   assert.match(js,/captchaToken/);
   assert.match(js,/signInWithOtp/);
   assert.match(js,/resetPasswordForEmail/);
+  assert.match(js,/provider:'google'/);
+  assert.match(js,/provider:'github'/);
 });
 
 test('public config exposes only browser-safe Turnstile key and never server secrets',()=>{
@@ -32,4 +34,15 @@ test('runtime removes course/certificate promises and adds rankings navigation',
   assert.match(js,/removeCoursePromises/);
   assert.match(js,/Rankings/);
   assert.match(js,/Founder & CEO, LinuxAid/);
+});
+
+
+test('account page exposes GitHub alongside Google',()=>{
+  const html=read('auth.html');
+  const page=read('js/authPage.js');
+  const cfg=read('config.js');
+  assert.match(html,/id="authGitHub"/);
+  assert.match(html,/Continue with GitHub/);
+  assert.match(page,/signInGitHub/);
+  assert.match(cfg,/githubEnabled:\s*true/);
 });
