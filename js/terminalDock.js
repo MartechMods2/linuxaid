@@ -19,7 +19,7 @@ if (!excludedPages.has(document.body.dataset.page || '')) {
   backdrop.innerHTML = `
     <section class="terminal-dock" role="dialog" aria-modal="true" aria-label="LinuxAid Terminal Lab">
       <header class="terminal-dock-head">
-        <div class="terminal-dock-title"><span></span><i class="fas fa-terminal" aria-hidden="true"></i><span>LinuxAid Terminal V8</span></div>
+        <div class="terminal-dock-title"><span></span><i class="fas fa-terminal" aria-hidden="true"></i><span>LinuxAid Terminal</span></div>
         <div class="terminal-dock-actions">
           <button type="button" data-terminal-doctor aria-label="Run terminal doctor"><i class="fas fa-stethoscope"></i></button>
           <button type="button" data-terminal-commands aria-label="Show command reference"><i class="fas fa-book"></i></button>
@@ -65,7 +65,7 @@ if (!excludedPages.has(document.body.dataset.page || '')) {
     if (output.childElementCount) return;
     const intro = document.createElement('div');
     intro.className = 'terminal-dock-line';
-    intro.textContent = `LinuxAid Terminal V8 ready. Core commands are safely simulated and ${engine.referenceCount.toLocaleString()} command forms are indexed. Try: pwd, ls -la, doctor, commands docker, explain chmod, or debug permission denied.`;
+    intro.textContent = `LinuxAid Terminal ready. Core commands are safely simulated and ${engine.referenceCount.toLocaleString()} command forms are indexed. Try: pwd, ls -la, doctor, commands docker, explain chmod, or debug permission denied.`;
     output.appendChild(intro);
   }
 
