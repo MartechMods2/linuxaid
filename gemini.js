@@ -29,10 +29,21 @@ async function queryBackendFunction(prompt, config, history) {
   const status = getBackendStatus();
   if (!status.ready) throw new Error('LinuxAid AI service is not configured.');
   const functionName = aiConfig(config).edgeFunction || 'linuxaid-ai';
-  const result = await invokeBackendFunction(functionName, {
+  const requestBody = {
     prompt:String(prompt).slice(0,6000),
     history:normalizeHistory(history)
-  });
+  };
+
+  let result;
+  try {
+    result = await invokeBackendFunction(functionName, requestBody);
+  } catch (error) {
+    const retryable = ['AI_PROVIDER_BUSY','AI_TIMEOUT','AI_UPSTREAM_ERROR','AI_PROVIDER_REQUEST'].includes(String(error?.code || ''));
+    if (!retryable) throw error;
+    await new Promise(resolve => setTimeout(resolve, 700));
+    result = await invokeBackendFunction(functionName, requestBody);
+  }
+
   const answer = readAnswer(result);
   if (!answer) throw new Error('LinuxAid AI returned an empty answer.');
   return answer;
