@@ -198,6 +198,11 @@ function openLab(labId) {
   $('labHint').textContent='Hints appear here without giving away the entire answer.';
   $('labTerminalOutput').textContent='LinuxAid Lab Terminal ready. Inspect first, change second, verify last.';
   $('labTerminalInput').value='';
+  const askLink=$('askLabAi');
+  if(askLink){
+    const prompt=`I am working on the LinuxAid lab “${selectedLab.title}”. Scenario: ${selectedLab.scenario} Objective: ${selectedLab.objective} Give me one troubleshooting hint at a time without giving away the full solution.`;
+    askLink.href=`dashboard.html?mode=troubleshoot&ask=${encodeURIComponent(prompt)}#assistant`;
+  }
   $('labWorkspace').scrollIntoView({ behavior:'smooth', block:'start' });
   $('labTerminalInput').focus();
 }
