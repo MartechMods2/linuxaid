@@ -377,6 +377,11 @@ body.light-theme .form-control { background:#fff; }
 .auth-tabs { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:6px; margin-bottom:22px; border:1px solid var(--hairline); border-radius:16px; background:rgba(0,0,0,.12); }
 .auth-tab { border:0; border-radius:11px; padding:11px; color:var(--muted); background:transparent; cursor:pointer; }
 .auth-tab.active { color:var(--text); background:rgba(101,255,141,.1); }
+.auth-oauth-grid { display:grid; gap:10px; }
+.auth-provider-button { width:100%; min-height:46px; justify-content:center; font-weight:750; }
+.auth-provider-button i { font-size:1rem; }
+.auth-provider-github { background:rgba(255,255,255,.035); }
+body.light-theme .auth-provider-github { background:#f8fafc; }
 .auth-form-grid { display:grid; gap:14px; }
 .form-label { display:grid; gap:7px; color:var(--muted); font-size:.88rem; }
 .auth-divider { display:flex; align-items:center; gap:12px; color:var(--muted); font-size:.82rem; margin:20px 0; }
