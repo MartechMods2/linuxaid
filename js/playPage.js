@@ -128,7 +128,7 @@ function finish(){
   const review=$('resultReview');review.replaceChildren();
   if(misses.length){
     const h=document.createElement('strong');h.textContent='Review your misses';review.appendChild(h);
-    misses.slice(0,4).forEach(q=>{const p=document.createElement('p');p.textContent=\`• \${q.explanation}\`;review.appendChild(p)});
+    misses.slice(0,4).forEach(q=>{const p=document.createElement('p');p.textContent=`• ${q.explanation}`;review.appendChild(p)});
   }else{review.innerHTML='<strong>No misses this round.</strong><p>Perfect recall. Try another mode or a harder lab.</p>'}
   if(result.percent===100)celebrate();
   updateStats();
