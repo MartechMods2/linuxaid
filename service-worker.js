@@ -2,7 +2,7 @@ const CACHE_NAME='linuxaid-v9.0';
 const APP_SHELL=[
   './','./index.html','./dashboard.html','./linux.html','./install.html','./labs.html','./tools.html',
   './profile.html','./auth.html','./community.html','./people.html','./messages.html','./rankings.html',
-  './support.html','./offline.html','./404.html',
+  './support.html','./privacy.html','./terms.html','./security.html','./acceptable-use.html','./offline.html','./404.html',
   './styles.css','./product.css','./product-v8.css','./ui-v9.css','./hero-motion.css','./social-v7.css',
   './app.js','./config.js','./gemini.js','./backend.js','./favicon.svg','./manifest.webmanifest',
   './js/siteEnhancements.js','./js/v8Enhancements.js','./js/pageBasics.js','./js/navExtras.js',
