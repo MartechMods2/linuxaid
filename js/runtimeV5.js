@@ -65,7 +65,10 @@ function addMotionPolish(){
 function normalizeNavigation(){
   const page=document.body.dataset.page||'';
   const social=['community','people','messages'].includes(page);
-  const desired=social
+  const about=page==='about';
+  const desired=about
+    ?[['Home','index.html'],['Dashboard','dashboard.html'],['Play','play.html'],['Labs','labs.html'],['Community','community.html'],['About','about.html']]
+    :social
     ?[['Home','index.html'],['Dashboard','dashboard.html'],['Play','play.html'],['Community','community.html'],['People','people.html'],['Messages','messages.html'],['Rankings','rankings.html']]
     :[['Home','index.html'],['Dashboard','dashboard.html'],['Play','play.html'],['Labs','labs.html'],['Tools','tools.html'],['Community','community.html'],['Rankings','rankings.html']];
   document.querySelectorAll('.nav-links').forEach(nav=>{
