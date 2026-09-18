@@ -106,7 +106,7 @@ function setupRevealAnimations(){
 function buildPalette(){
   if(document.querySelector('.command-palette-backdrop'))return;
   const actions=[
-    ['fa-house','Home','index.html'],['fa-gauge-high','Dashboard','dashboard.html'],['fa-flask','Labs','labs.html'],
+    ['fa-house','Home','index.html'],['fa-gauge-high','Dashboard','dashboard.html'],['fa-gamepad','Play','play.html'],['fa-flask','Labs','labs.html'],
     ['fa-screwdriver-wrench','Tools','tools.html'],['fa-users','Community','community.html'],['fa-user-group','People','people.html'],
     ['fa-message','Messages','messages.html'],['fa-ranking-star','Rankings','rankings.html'],['fa-user','Profile','profile.html']
   ];
