@@ -1,3 +1,26 @@
+// LinuxAid V9 theme bootstrap: light is the default unless the user explicitly chose otherwise.
+(() => {
+  try {
+    const stored = localStorage.getItem('linuxaid-theme-mode') || localStorage.getItem('linuxaid-theme') || 'light';
+    const mode = ['light','dark','system'].includes(stored) ? stored : 'light';
+    const effective = mode === 'system'
+      ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : mode;
+    document.documentElement.dataset.theme = effective;
+    document.documentElement.dataset.themeMode = mode;
+  } catch {
+    document.documentElement.dataset.theme = 'light';
+    document.documentElement.dataset.themeMode = 'light';
+  }
+  if (!document.querySelector('link[data-linuxaid-ui-v9]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'ui-v9.css?v=9.0';
+    link.dataset.linuxaidUiV9 = 'true';
+    document.head.appendChild(link);
+  }
+})();
+
 // Public runtime configuration for LinuxAid.
 // Only browser-safe public identifiers belong here. Never place service-role,
 // AI provider secrets, OAuth client secrets or CAPTCHA secret keys in this file.
@@ -22,6 +45,9 @@ window.LINUXAID_CONFIG = {
   security: {
     turnstileSiteKey: '0x4AAAAAAE6PU0UdSo50KwA_',
     authTimeoutMs: 15000,
+    requestTimeoutMs: 20000,
+    idleWarningMs: 25 * 60 * 1000,
+    idleSignOutMs: 30 * 60 * 1000,
     maxAuthAttemptsPerWindow: 6,
     authAttemptWindowMs: 10 * 60 * 1000
   },
@@ -41,7 +67,7 @@ window.LINUXAID_CONFIG = {
   },
   product: {
     name: 'LinuxAid',
-    repository: 'https://github.com/MartechMods2/linuxaid',
+    repository: '',
     website: 'https://martechmods2.github.io/linuxaid/',
     // Paste your Buy Me a Coffee / Ko-fi / GitHub Sponsors URL here.
     supportUrl: ''
@@ -61,7 +87,7 @@ Promise.all([
   import('./js/brand.js'),
   import('./js/runtimeV5.js'),
   import('./js/v8Enhancements.js'),
-  import('./js/uiV81.js?v=8.1')
+  import('./js/themeV9.js?v=9.0')
 ]).then(modules => {
   const brand = modules[7];
   brand?.applyLinuxAidBranding?.();
