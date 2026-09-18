@@ -20,8 +20,8 @@ function removeCoursePromises(){
       const title=card.querySelector('h2,h3,h4'),body=card.querySelector('p');
       if(title)title.textContent='Command mastery & Linux challenges';
       if(body)body.textContent='Build confidence through safe terminal practice, troubleshooting tools, ranks and hands-on Linux challenges.';
-      link.href='rankings.html';
-      link.textContent='View ranks';
+      link.href='play.html';
+      link.textContent='Start a challenge';
     }else link.remove();
   });
   document.querySelectorAll('.nav-links a').forEach(link=>{if(/course/i.test(link.textContent||''))link.remove()});
