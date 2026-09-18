@@ -112,7 +112,7 @@ async function send(customText=''){
   const pending={role:'assistant',mode:aiMode,text:'LinuxAid is thinking…'};chat.push(pending);renderChat();setBusy(true);
   try{
     pending.text=getAIStatus(config).ready
-      ?await queryAI(text,config,chat.slice(0,-1),{mode:aiMode,distro:aiDistro,level:aiLevel})
+      ?await queryAI(text,config,chat.slice(0,-2),{mode:aiMode,distro:aiDistro,level:aiLevel})
       :'LinuxAid AI is not configured yet. Use Play, Tools, Labs and Terminal while the AI service is unavailable.';
   }catch(error){
     pending.text=`LinuxAid AI could not answer right now. ${error.message||'Please retry in a moment.'}`.trim();refreshAIStatus();
