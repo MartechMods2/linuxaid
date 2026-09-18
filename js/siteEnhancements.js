@@ -108,7 +108,7 @@ function buildPalette(){
   const actions=[
     ['fa-house','Home','index.html'],['fa-gauge-high','Dashboard','dashboard.html'],['fa-gamepad','Play','play.html'],['fa-flask','Labs','labs.html'],
     ['fa-screwdriver-wrench','Tools','tools.html'],['fa-users','Community','community.html'],['fa-user-group','People','people.html'],
-    ['fa-message','Messages','messages.html'],['fa-ranking-star','Rankings','rankings.html'],['fa-user','Profile','profile.html']
+    ['fa-message','Messages','messages.html'],['fa-ranking-star','Rankings','rankings.html'],['fa-user','Profile','profile.html'],['fa-circle-info','About','about.html']
   ];
   const wrap=document.createElement('div');wrap.className='command-palette-backdrop';
   wrap.innerHTML='<div class="command-palette" role="dialog" aria-modal="true" aria-label="LinuxAid quick navigation"><input type="search" placeholder="Search LinuxAid…" aria-label="Search LinuxAid actions"><div class="palette-list"></div></div>';
@@ -183,7 +183,7 @@ function improveExistingContent(){
   document.querySelectorAll('.footer .footer-row').forEach(row=>{
     if(row.querySelector('.footer-legal'))return;
     const legal=document.createElement('div');legal.className='footer-legal';
-    legal.innerHTML='<span>© 2026 Martech. LinuxAid. All rights reserved.</span><span><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></span>';
+    legal.innerHTML='<span>© 2026 Martech. LinuxAid. All rights reserved.</span><span><a href="about.html">About</a> · <a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></span>';
     row.appendChild(legal);
   });
 }
