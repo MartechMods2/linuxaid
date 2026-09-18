@@ -80,7 +80,7 @@ export function createTerminalEngine(initial={}){
       const hint=family?.length?`\nCommon subcommands: ${family.slice(0,18).join(', ')}${family.length>18?', …':''}`:'';
       return{...result,output:`${cmd} is recognized by LinuxAid's command reference, but this browser terminal does not fake a real system action for it.${hint}\nUse: explain ${cmd} • commands ${cmd} • debug <error>\nRun it on a real Linux machine/VM/WSL when you need actual system output.`};
     }
-    if(cmd==='help')result.output=`LinuxAid Terminal V8\nCore filesystem/network/service commands are safely simulated. ${terminalReferenceCount.toLocaleString()} command forms are indexed for search and guidance.\nNew: commands [query] • explain <command> • debug <error> • doctor\n${result.output}`;
+    if(cmd==='help')result.output=`LinuxAid Terminal\nCore filesystem/network/service commands are safely simulated. ${terminalReferenceCount.toLocaleString()} command forms are indexed for search and guidance.\nNew: commands [query] • explain <command> • debug <error> • doctor\n${result.output}`;
     return result;
   }
 
