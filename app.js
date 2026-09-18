@@ -98,7 +98,7 @@ async function initializeDashboard() {
   renderSuggestions();
   renderCommands();
   renderRoadmapProgress();
-  renderTerminalOutput('Welcome to LinuxAid Terminal V2. Type <strong>help</strong> or <strong>man ls</strong> to begin.', false);
+  renderTerminalOutput('Welcome to LinuxAid Terminal. Type <strong>help</strong> or <strong>man ls</strong> to begin.', false);
   updateLearningStatus();
   if (config.firebase?.apiKey) loadCommunityPostsIfAvailable();
 }
