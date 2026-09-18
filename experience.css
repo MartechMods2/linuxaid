@@ -82,3 +82,13 @@
 .path-card h3{margin:14px 0 7px}.path-card p{margin:0 0 18px;color:var(--muted);line-height:1.65}.path-card .button{margin-top:auto;width:100%}
 @media(max-width:980px){.path-grid{grid-template-columns:1fr 1fr}.home-resume{grid-template-columns:1fr}.home-resume-actions{justify-content:flex-start}}
 @media(max-width:620px){.path-grid{grid-template-columns:1fr}.home-resume{padding:18px 16px}.home-resume-actions{display:grid}.home-resume-actions .button{width:100%}}
+
+.legend-fallback{
+  position:absolute;inset:0;display:grid;place-items:center;
+  background:
+    radial-gradient(circle at 35% 25%,color-mix(in srgb,var(--user-accent) 28%,transparent),transparent 35%),
+    linear-gradient(145deg,var(--surface-2),var(--panel));
+  color:color-mix(in srgb,var(--user-accent) 74%,var(--text));
+  font:900 clamp(3.4rem,10vw,7rem)/1 var(--display-font);
+  letter-spacing:-.08em
+}
