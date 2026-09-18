@@ -60,7 +60,8 @@ Promise.all([
   import('./js/terminalDock.js'),
   import('./js/brand.js'),
   import('./js/runtimeV5.js'),
-  import('./js/v8Enhancements.js')
+  import('./js/v8Enhancements.js'),
+  import('./js/uiV81.js?v=8.1')
 ]).then(modules => {
   const brand = modules[7];
   brand?.applyLinuxAidBranding?.();
