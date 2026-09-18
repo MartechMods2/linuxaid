@@ -260,6 +260,10 @@ export async function saveSyncedProgress(progress, learning, uid = state.lastUse
     updated_at:new Date().toISOString()
   }, { onConflict:'user_id' });
   if (error) throw error;
+
+  // Keep the discoverable profile rank in sync with the private learner state.
+  const { error:rankError } = await state.client.rpc('refresh_my_linuxaid_rank');
+  if (rankError) console.warn('LinuxAid public rank refresh failed:', rankError.message || rankError);
 }
 
 export async function loadCommunityPosts() {
