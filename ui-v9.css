@@ -440,3 +440,7 @@ input:focus,textarea:focus,select:focus,.form-control:focus,.social-search:focus
 
 /* Avoid stacked floating controls on phones */
 @media(max-width:720px){.back-to-top{display:none!important}}
+
+/* Branded fast menu control */
+.mobile-menu-button{color:var(--user-accent)!important;background:color-mix(in srgb,var(--user-accent) 7%,var(--surface-1))!important;border-color:color-mix(in srgb,var(--user-accent) 24%,var(--border))!important}
+.navbar.nav-open .mobile-menu-button{background:var(--user-accent)!important;color:var(--user-accent-contrast)!important;border-color:transparent!important}
