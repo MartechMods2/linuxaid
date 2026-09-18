@@ -20,16 +20,27 @@ function shuffled(list,seed=Math.floor(Math.random()*2**31)){
   for(let i=arr.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}
   return arr;
 }
-function dateKey(){return new Date().toISOString().slice(0,10)}
+function dateKey(){
+  const d=new Date(),pad=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function randomizeOptions(question,seed){
+  const choices=shuffled(question.options.map((label,index)=>({label,index})),seed);
+  return {...question,options:choices.map(x=>x.label),answer:choices.findIndex(x=>x.index===question.answer)};
+}
 function buildRound(mode){
   if(mode==='daily'){
-    const key=dateKey();
-    return {mode,title:'Daily Mission',dailyKey:key,questions:shuffled(QUIZ_BANK,hashString(key)).slice(0,5)};
+    const key=dateKey(),seed=hashString(key);
+    const questions=shuffled(QUIZ_BANK,seed).slice(0,5).map((q,i)=>randomizeOptions(q,seed+i*7919));
+    return {mode,title:'Daily Mission',dailyKey:key,questions};
   }
   if(mode==='safety'){
-    return {mode,title:'Safety Check',dailyKey:'',questions:shuffled(QUIZ_BANK.filter(q=>q.category==='Safety'||q.category==='Permissions')).slice(0,7)};
+    const seed=Math.floor(Math.random()*2**31);
+    const questions=shuffled(QUIZ_BANK.filter(q=>q.category==='Safety'||q.category==='Permissions'),seed).slice(0,7).map((q,i)=>randomizeOptions(q,seed+i*6151));
+    return {mode,title:'Safety Check',dailyKey:'',questions};
   }
-  return {mode:'quick',title:'Quick Fire',dailyKey:'',questions:shuffled(QUIZ_BANK).slice(0,10)};
+  const seed=Math.floor(Math.random()*2**31);
+  return {mode:'quick',title:'Quick Fire',dailyKey:'',questions:shuffled(QUIZ_BANK,seed).slice(0,10).map((q,i)=>randomizeOptions(q,seed+i*3571))};
 }
 function updateStats(){
   const p=getProgressSummary();
@@ -76,7 +87,7 @@ function choose(optionIndex,button){
   if(answered)return;
   answered=true;
   const q=round.questions[index],correct=optionIndex===q.answer;
-  if(correct){score+=1;combo+=1;bestCombo=Math.max(bestCombo,combo)}else combo=0;
+  if(correct){score+=1;combo+=1;bestCombo=Math.max(bestCombo,combo);navigator.vibrate?.(18)}else{combo=0;navigator.vibrate?.([18,35,18])}
   [...$('quizChoices').children].forEach((node,i)=>{
     node.disabled=true;
     if(i===q.answer)node.classList.add('correct');
