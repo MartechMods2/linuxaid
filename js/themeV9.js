@@ -16,6 +16,7 @@ function contrastFor(hex){return luminance(hex)>.5?'#07120c':'#ffffff'}
 
 let mode=normalizeMode(safeRead(STORAGE_MODE,safeRead(LEGACY_KEY,DEFAULT_MODE)));
 let accent=normalizeAccent(safeRead(STORAGE_ACCENT,DEFAULT_ACCENT));
+let remoteUser=null,remoteProfile=null,remoteSaveTimer=null;
 
 function updateMeta(effective){
   const meta=document.querySelector('meta[name="theme-color"]');
@@ -49,21 +50,36 @@ function apply({emit=true}={}){
   if(emit)document.dispatchEvent(new CustomEvent('linuxaid:theme-change',{detail:{mode,effective,accent}}));
 }
 
-function setMode(next,{persist=true,emit=true}={}){
+function scheduleRemoteSave(){
+  if(!remoteUser||!remoteProfile)return;
+  clearTimeout(remoteSaveTimer);
+  remoteSaveTimer=setTimeout(async()=>{
+    try{
+      const backend=await import('../backend.js');
+      const next={...remoteProfile,themeMode:mode,accentColor:accent};
+      await backend.saveUserProfile(remoteUser.uid,next);
+      remoteProfile=next;
+    }catch{}
+  },650);
+}
+function setMode(next,{persist=true,emit=true,remote=true}={}){
   mode=normalizeMode(next);
   if(persist){safeWrite(STORAGE_MODE,mode);safeWrite(LEGACY_KEY,effectiveMode(mode));}
   apply({emit});
+  if(remote)scheduleRemoteSave();
 }
-function setAccent(next,{persist=true,emit=true}={}){
+function setAccent(next,{persist=true,emit=true,remote=true}={}){
   accent=normalizeAccent(next);
   if(persist)safeWrite(STORAGE_ACCENT,accent);
   apply({emit});
+  if(remote)scheduleRemoteSave();
 }
 function setPreferences(nextMode,nextAccent,options={}){
   mode=normalizeMode(nextMode||mode);
   accent=normalizeAccent(nextAccent||accent);
   if(options.persist!==false){safeWrite(STORAGE_MODE,mode);safeWrite(LEGACY_KEY,effectiveMode(mode));safeWrite(STORAGE_ACCENT,accent)}
   apply({emit:options.emit!==false});
+  if(options.remote!==false)scheduleRemoteSave();
 }
 function getPreferences(){return{mode,accent,effective:effectiveMode(mode)}}
 
@@ -91,12 +107,33 @@ function bindAppearanceControls(){
   if(reset&&!reset.dataset.bound){reset.dataset.bound='1';reset.addEventListener('click',()=>setPreferences(DEFAULT_MODE,DEFAULT_ACCENT))}
 }
 
+async function syncRemoteAppearance(){
+  try{
+    const backend=await import('../backend.js');
+    await backend.initBackend(window.LINUXAID_CONFIG||{});
+    const applyUser=async user=>{
+      remoteUser=user||null;remoteProfile=null;
+      if(!user)return;
+      const profile=await backend.loadUserProfile(user.uid).catch(()=>null);
+      if(!profile)return;
+      remoteProfile=profile;
+      const remoteMode=normalizeMode(profile.themeMode||mode);
+      const remoteAccent=normalizeAccent(profile.accentColor||accent);
+      setPreferences(remoteMode,remoteAccent,{emit:false,remote:false});
+    };
+    backend.onAuthStateChangedListener(applyUser);
+    const current=backend.getBackendStatus().user;
+    if(current)await applyUser(current);
+  }catch{}
+}
+
 function ready(){
   apply({emit:false});
   bindThemeButtons();
   bindAppearanceControls();
   const observer=new MutationObserver(()=>{bindThemeButtons();bindAppearanceControls();apply({emit:false})});
   observer.observe(document.body,{childList:true,subtree:true});
+  syncRemoteAppearance();
 }
 
 window.LinuxAidTheme={setMode,setAccent,setPreferences,getPreferences,apply};
