@@ -437,3 +437,6 @@ input:focus,textarea:focus,select:focus,.form-control:focus,.social-search:focus
   font-size:.86rem;line-height:1.5
 }
 @media(max-width:720px){.session-security-toast{left:12px;right:12px;bottom:76px;width:auto}}
+
+/* Avoid stacked floating controls on phones */
+@media(max-width:720px){.back-to-top{display:none!important}}
