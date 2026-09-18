@@ -11,6 +11,19 @@ function localDayKey(){
 }
 function hash(value){let h=2166136261;for(const ch of String(value)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
 
+function setupLegendImages(){
+  document.querySelectorAll('.legend-media img[data-fallback]').forEach(img=>{
+    const fallback=()=>{
+      if(img.dataset.failed==='1')return;
+      img.dataset.failed='1';img.hidden=true;
+      const mark=document.createElement('div');mark.className='legend-fallback';mark.setAttribute('aria-hidden','true');mark.textContent=img.dataset.fallback||'Linux';
+      img.parentElement?.prepend(mark);
+    };
+    img.addEventListener('error',fallback,{once:true});
+    if(img.complete&&!img.naturalWidth)fallback();
+  });
+}
+
 function setupLegends(){
   const root=$('[data-legends-carousel]');if(!root)return;
   const track=root.querySelector('.legend-track'),slides=[...root.querySelectorAll('.legend-slide')],dots=[...root.querySelectorAll('.legend-dot')];
@@ -82,4 +95,4 @@ function setupSurprise(){
   });
 }
 
-setupLegends();setupDailySpark();setupResume();setupSurprise();
+setupLegendImages();setupLegends();setupDailySpark();setupResume();setupSurprise();
