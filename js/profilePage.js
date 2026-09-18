@@ -3,7 +3,7 @@ import {
   loadUserProfile, saveUserProfile, uploadAvatar
 } from '../backend.js';
 import { getProgressSummary, exportProgress, importProgress, resetProgress } from './progress.js';
-import { COURSES, LABS, readLearningState } from './learningData.js';
+import { LABS, readLearningState } from './learningData.js';
 import { identifyAnalyticsUser, setAnalyticsOptOut, isAnalyticsOptedOut } from './analytics.js';
 
 const config=window.LINUXAID_CONFIG||{};
@@ -39,6 +39,7 @@ function renderProgress(){
     stat(progress.xp,'XP earned'),
     stat(progress.learnedCommands.length,'Commands explored'),
     stat(progress.streakDays,'Day streak'),
+    stat(progress.quizzesCompleted||0,'Quiz rounds'),
     stat(progress.level,'Learner level')
   );
   const achievements=$('achievementGrid');
@@ -58,8 +59,8 @@ function renderProgress(){
       ['Beginner commands',progress.roadmap.beginner],
       ['Intermediate commands',progress.roadmap.intermediate],
       ['Advanced commands',progress.roadmap.advanced],
-      ['Course lessons',Math.round((learning.completedLessons.length/Math.max(1,COURSES.reduce((sum,c)=>sum+c.lessons.length,0)))*100)],
-      ['Hands-on labs',Math.round((learning.completedLabs.length/Math.max(1,LABS.length))*100)]
+      ['Hands-on labs',Math.round((learning.completedLabs.length/Math.max(1,LABS.length))*100)],
+      ['Quiz accuracy',Math.round(((progress.gameStats?.correct||0)/Math.max(1,progress.gameStats?.questions||0))*100)]
     ];
     rows.forEach(([label,value])=>{
       const row=document.createElement('div');row.style.marginBottom='18px';
@@ -191,7 +192,7 @@ $('importProgress')?.addEventListener('change',async event=>{
   }catch(error){alert(`Could not import LinuxAid progress: ${error.message}`)}
 });
 $('resetProgress')?.addEventListener('click',()=>{
-  if(!confirm('Reset local LinuxAid command progress, course progress and lab progress on this browser?'))return;
+  if(!confirm('Reset local LinuxAid command, quiz and lab progress on this browser?'))return;
   resetProgress();localStorage.removeItem('linuxaid-learning-v1');renderProgress();
 });
 
