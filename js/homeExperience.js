@@ -12,20 +12,21 @@ function hash(value){let h=2166136261;for(const ch of String(value)){h^=ch.charC
 function setupLegends(){
   const root=$('[data-legends-carousel]');if(!root)return;
   const track=root.querySelector('.legend-track'),slides=[...root.querySelectorAll('.legend-slide')],dots=[...root.querySelectorAll('.legend-dot')];
-  const prev=root.querySelector('[data-legend-prev]'),next=root.querySelector('[data-legend-next]');
-  let index=0,timer=null,startX=null;
+  const prev=root.querySelector('[data-legend-prev]'),next=root.querySelector('[data-legend-next]'),toggle=root.querySelector('[data-legend-toggle]');
+  let index=0,timer=null,startX=null,userPaused=false;
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const show=(nextIndex,{restart=true}={})=>{
     index=(nextIndex+slides.length)%slides.length;
     track.style.transform=`translateX(-${index*100}%)`;
-    slides.forEach((slide,i)=>{slide.setAttribute('aria-hidden',String(i!==index));slide.tabIndex=i===index?0:-1});
+    slides.forEach((slide,i)=>{const inactive=i!==index;slide.setAttribute('aria-hidden',String(inactive));slide.tabIndex=inactive?-1:0;slide.toggleAttribute('inert',inactive)});
     dots.forEach((dot,i)=>{dot.classList.toggle('active',i===index);dot.setAttribute('aria-current',i===index?'true':'false')});
     if(restart)play();
   };
   const stop=()=>{clearTimeout(timer);timer=null;root.classList.remove('is-playing')};
-  const play=()=>{stop();if(reduced||document.hidden)return;root.classList.add('is-playing');void root.offsetWidth;timer=setTimeout(()=>show(index+1),7000)};
+  const play=()=>{stop();if(reduced||document.hidden||userPaused)return;root.classList.add('is-playing');void root.offsetWidth;timer=setTimeout(()=>show(index+1),7000)};
   prev?.addEventListener('click',()=>show(index-1));
   next?.addEventListener('click',()=>show(index+1));
+  toggle?.addEventListener('click',()=>{userPaused=!userPaused;toggle.setAttribute('aria-label',userPaused?'Play carousel':'Pause carousel');toggle.innerHTML=userPaused?'<i class="fas fa-play"></i>':'<i class="fas fa-pause"></i>';userPaused?stop():play()});
   dots.forEach((dot,i)=>dot.addEventListener('click',()=>show(i)));
   root.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'||e.pointerType==='pen'){startX=e.clientX;stop()}},{passive:true});
   root.addEventListener('pointerup',e=>{if(startX===null)return;const delta=e.clientX-startX;startX=null;if(Math.abs(delta)>45)show(index+(delta<0?1:-1));else play()},{passive:true});
