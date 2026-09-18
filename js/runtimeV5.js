@@ -66,8 +66,8 @@ function normalizeNavigation(){
   const page=document.body.dataset.page||'';
   const social=['community','people','messages'].includes(page);
   const desired=social
-    ?[['Home','index.html'],['Dashboard','dashboard.html'],['Community','community.html'],['People','people.html'],['Messages','messages.html'],['Rankings','rankings.html']]
-    :[['Home','index.html'],['Dashboard','dashboard.html'],['Labs','labs.html'],['Tools','tools.html'],['Community','community.html'],['Rankings','rankings.html']];
+    ?[['Home','index.html'],['Dashboard','dashboard.html'],['Play','play.html'],['Community','community.html'],['People','people.html'],['Messages','messages.html'],['Rankings','rankings.html']]
+    :[['Home','index.html'],['Dashboard','dashboard.html'],['Play','play.html'],['Labs','labs.html'],['Tools','tools.html'],['Community','community.html'],['Rankings','rankings.html']];
   document.querySelectorAll('.nav-links').forEach(nav=>{
     nav.replaceChildren();
     desired.forEach(([label,href])=>{
